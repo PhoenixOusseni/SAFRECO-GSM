@@ -44,9 +44,13 @@
                                         <td>{{ $fournisseur->telephone }}</td>
                                         <td>{{ $fournisseur->adresse }}</td>
                                         <td>
-                                            <a href="{{ route('gestions_fournisseurs.edit', $fournisseur->id) }}"
+                                            <a href="{{ route('gestions_fournisseurs.show', $fournisseur->id) }}"
                                                 class="btn btn-success btn-sm">
-                                                <i class="bi bi-eye"></i>&nbsp; Voir
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ route('gestions_fournisseurs.edit', $fournisseur->id) }}"
+                                                class="btn btn-warning btn-sm">
+                                                <i class="bi bi-pencil-square"></i>
                                             </a>
                                         </td>
                                     </tr>

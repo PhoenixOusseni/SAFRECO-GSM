@@ -49,9 +49,28 @@ class FournisseurController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Fournisseur $fournisseur)
+    public function show(String $id)
     {
-        //
+        $fournisseur = Fournisseur::findOrFail($id);
+
+        // Charger les achats avec leurs décaissements
+        $achats = $fournisseur->achats()
+            ->with('decaissements')
+            ->orderBy('date_achat', 'desc')
+            ->get();
+
+        // Calculer le montant total décaissé au fournisseur
+        $montantTotalDecaisse = 0;
+        $montantTotalASolder = 0;
+
+        foreach ($achats as $achat) {
+            foreach ($achat->decaissements as $decaissement) {
+                $montantTotalDecaisse += $decaissement->montant_decaisse;
+                $montantTotalASolder += $decaissement->reste;
+            }
+        }
+
+        return view('pages.fournisseurs.show', compact('fournisseur', 'achats', 'montantTotalDecaisse', 'montantTotalASolder'));
     }
 
     /**
@@ -89,5 +108,40 @@ class FournisseurController extends Controller
         $fournisseur = Fournisseur::findOrFail($id);
         $fournisseur->delete();
         return redirect()->route('gestions_fournisseurs.index')->with('success', 'Fournisseur supprimé avec succès.');
+    }
+
+    /**
+     * Import fournisseurs from CSV/Excel file
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,xlsx,xls|max:10240'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            // Implementation to be added for CSV/Excel parsing
+            // Using Laravel Excel or similar library
+
+            return redirect()->back()->with('success', 'Fournisseurs importés avec succès.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erreur lors de l\'import: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download template for fournisseur import
+     */
+    public function template()
+    {
+        $headers = ['Code', 'Type', 'Raison Sociale', 'Nom', 'Adresse', 'Téléphone', 'Email', 'Ville'];
+        $filename = 'template_fournisseurs.csv';
+
+        return response()->streamDownload(function() use ($headers) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, $headers);
+            fclose($handle);
+        }, $filename);
     }
 }

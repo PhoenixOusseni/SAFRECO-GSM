@@ -15,7 +15,10 @@ class Decaissement extends Model
         'montant_decaisse',
         'reste',
         'mode_paiement',
+        'reference',
         'achat_id',
+        'banque_id',
+        'caisse_id',
     ];
 
     protected $casts = [
@@ -31,6 +34,22 @@ class Decaissement extends Model
     public function achat()
     {
         return $this->belongsTo(Achat::class);
+    }
+
+    /**
+     * Relation avec la banque
+     */
+    public function banque()
+    {
+        return $this->belongsTo(Banque::class);
+    }
+
+    /**
+     * Relation avec la caisse
+     */
+    public function caisse()
+    {
+        return $this->belongsTo(Caisse::class);
     }
 
     /**

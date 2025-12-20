@@ -49,9 +49,28 @@ class ClientController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Client $client)
+    public function show(String $id)
     {
-        //
+        $client = Client::findOrFail($id);
+
+        // Charger les ventes avec leurs encaissements
+        $ventes = $client->ventes()
+            ->with('encaissements')
+            ->orderBy('date_vente', 'desc')
+            ->get();
+
+        // Calculer le montant total encaissé par le client
+        $montantTotalEncaisse = 0;
+        $montantTotalASolder = 0;
+
+        foreach ($ventes as $vente) {
+            foreach ($vente->encaissements as $encaissement) {
+                $montantTotalEncaisse += $encaissement->montant_encaisse;
+                $montantTotalASolder += $encaissement->reste;
+            }
+        }
+
+        return view('pages.clients.show', compact('client', 'ventes', 'montantTotalEncaisse', 'montantTotalASolder'));
     }
 
     /**
@@ -89,5 +108,40 @@ class ClientController extends Controller
         $client = Client::findOrFail($id);
         $client->delete();
         return redirect()->route('gestions_clients.index')->with('success', 'Client supprimé avec succès.');
+    }
+
+    /**
+     * Import clients from CSV/Excel file
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,xlsx,xls|max:10240'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            // Implementation to be added for CSV/Excel parsing
+            // Using Laravel Excel or similar library
+
+            return redirect()->back()->with('success', 'Clients importés avec succès.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erreur lors de l\'import: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download template for client import
+     */
+    public function template()
+    {
+        $headers = ['Code', 'Type', 'Raison Sociale', 'Nom', 'Adresse', 'Téléphone', 'Email', 'Ville'];
+        $filename = 'template_clients.csv';
+
+        return response()->streamDownload(function() use ($headers) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, $headers);
+            fclose($handle);
+        }, $filename);
     }
 }

@@ -20,6 +20,9 @@ return new class extends Migration
             $table->text('mode_paiement')->nullable();
 
             $table->foreignId('achat_id')->nullable()->constrained('achats')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreignId('banque_id')->nullable()->constrained('banques')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreignId('caisse_id')->nullable()->constrained('caisses')->onDelete('cascade')->onUpdate('cascade');
+            $table->string('reference')->nullable();
             $table->timestamps();
         });
     }

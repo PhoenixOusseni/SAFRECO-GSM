@@ -24,4 +24,12 @@ class Client extends Model
     {
         return $this->hasMany(Sortie::class);
     }
+
+    /**
+     * Relation avec les ventes
+     */
+    public function ventes()
+    {
+        return $this->hasMany(Vente::class);
+    }
 }

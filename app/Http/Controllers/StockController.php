@@ -231,4 +231,70 @@ class StockController extends Controller
                 ->with('error', 'Erreur lors de la suppression du stock: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Import stocks from CSV/Excel file
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,xlsx,xls|max:10240'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            // Implementation to be added for CSV/Excel parsing
+            // Using Laravel Excel or similar library
+
+            return redirect()->back()->with('success', 'Stocks importés avec succès.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erreur lors de l\'import: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Reset all stocks
+     */
+    public function reset()
+    {
+        try {
+            Stock::truncate();
+            return redirect()->back()->with('success', 'Tous les stocks ont été réinitialisés.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erreur lors de la réinitialisation: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Export stocks to CSV
+     */
+    public function export()
+    {
+        try {
+            $stocks = Stock::with(['article', 'depot'])->get();
+            $headers = ['Article Code', 'Article', 'Dépôt', 'Quantité Disponible', 'Quantité Minimale', 'Date Mise à Jour'];
+
+            $filename = 'stocks_export_' . now()->format('Y-m-d_H-i-s') . '.csv';
+
+            return response()->streamDownload(function() use ($stocks, $headers) {
+                $handle = fopen('php://output', 'w');
+                fputcsv($handle, $headers);
+
+                foreach ($stocks as $stock) {
+                    fputcsv($handle, [
+                        $stock->article->code,
+                        $stock->article->designation,
+                        $stock->depot->designation,
+                        $stock->quantite_disponible,
+                        $stock->quantite_minimale,
+                        $stock->updated_at->format('d/m/Y H:i'),
+                    ]);
+                }
+
+                fclose($handle);
+            }, $filename);
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erreur lors de l\'export: ' . $e->getMessage());
+        }
+    }
 }

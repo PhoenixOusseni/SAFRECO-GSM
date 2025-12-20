@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('ville')->nullable();
             $table->string('email')->nullable();
             $table->string('telephone')->nullable();
+            $table->string('numero_compte')->nullable();
+            $table->decimal('solde', 15, 2)->nullable();
             $table->timestamps();
         });
     }

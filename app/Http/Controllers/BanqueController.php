@@ -36,6 +36,8 @@ class BanqueController extends Controller
         $banque->telephone = $request->telephone;
         $banque->email = $request->email;
         $banque->adresse = $request->adresse;
+        $banque->numero_compte = $request->numero_compte;
+        $banque->solde = $request->solde;
         $banque->save();
 
         return redirect()->route('gestions_banques.index')
@@ -45,16 +47,30 @@ class BanqueController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Banque $banque)
+    public function show(String $id)
     {
-        return view('pages.banques.show', compact('banque'));
+        $banque = Banque::findOrFail($id);
+
+        // Charger les encaissements et décaissements liés à cette banque
+        $encaissements = $banque->encaissements()
+            ->with(['vente', 'vente.client'])
+            ->orderBy('date_encaissement', 'desc')
+            ->get();
+
+        $decaissements = $banque->decaissements()
+            ->with(['achat', 'achat.fournisseur'])
+            ->orderBy('date_decaissement', 'desc')
+            ->get();
+
+        return view('pages.banques.show', compact('banque', 'encaissements', 'decaissements'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Banque $banque)
+    public function edit(String $id)
     {
+        $banque = Banque::findOrFail($id);
         return view('pages.banques.edit', compact('banque'));
     }
 
@@ -69,9 +85,8 @@ class BanqueController extends Controller
             'telephone' => $request->telephone,
             'email' => $request->email,
             'adresse' => $request->adresse,
-            'responsable' => $request->responsable,
-            'description' => $request->description,
-        ]);
+            'numero_compte' => $request->numero_compte,
+            'solde' => $request->solde,]);
 
         return redirect()->route('gestions_banques.index')
             ->with('success', 'Banque mise à jour avec succès.');

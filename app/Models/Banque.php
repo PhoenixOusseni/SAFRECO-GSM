@@ -9,13 +9,27 @@ class Banque extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'code',
-        'denomination',
-        'telephone',
-        'email',
-        'adresse',
-        'responsable',
-        'description',
+    protected $guarded = [
+
     ];
+
+    protected $casts = [
+        'solde' => 'decimal:2',
+    ];
+
+    /**
+     * Relation avec les encaissements
+     */
+    public function encaissements()
+    {
+        return $this->hasMany(Encaissement::class);
+    }
+
+    /**
+     * Relation avec les décaissements
+     */
+    public function decaissements()
+    {
+        return $this->hasMany(Decaissement::class);
+    }
 }

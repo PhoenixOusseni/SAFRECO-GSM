@@ -14,14 +14,14 @@
             </div>
             <div class="d-flex gap-2">
                 <a href="{{ route('gestions_fournisseurs.index') }}" class="btn btn-primary">
-                    <i class="bi bi-arrow-left"></i>&nbsp; Retour à la liste des fournisseurs
+                    <i class="bi bi-arrow-left"></i>
                 </a>
                 <form action="{{ route('gestions_fournisseurs.destroy', $fournisseurFinds->id) }}" method="POST"
                     onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce fournisseur ?');">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-danger">
-                        <i class="bi bi-trash"></i>&nbsp; Supprimer le fournisseur
+                        <i class="bi bi-trash"></i>
                     </button>
                 </form>
             </div>

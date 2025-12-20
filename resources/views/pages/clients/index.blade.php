@@ -44,9 +44,13 @@
                                         <td>{{ $client->telephone }}</td>
                                         <td>{{ $client->adresse }}</td>
                                         <td>
-                                            <a href="{{ route('gestions_clients.edit', $client->id) }}"
+                                            <a href="{{ route('gestions_clients.show', $client->id) }}"
                                                 class="btn btn-success btn-sm">
-                                                <i class="bi bi-eye"></i>&nbsp; Voir
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{{ route('gestions_clients.edit', $client->id) }}"
+                                                class="btn btn-warning btn-sm">
+                                                <i class="bi bi-pencil-square"></i>
                                             </a>
                                         </td>
                                     </tr>

@@ -52,20 +52,21 @@
                                     <thead class="table-light">
                                         <tr>
                                             <th>#</th>
-                                            <th>Code</th>
+                                            <th>Numéro de Compte</th>
                                             <th>Designation</th>
                                             <th>Téléphone</th>
                                             <th>Email</th>
+                                            <th>Solde</th>
                                             <th class="text-center">Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach ($banques as $index => $banque)
                                             <tr>
-                                                <td>{{ $index + 1 }}</td>
                                                 <td>
                                                     <span class="badge bg-primary">{{ $banque->code }}</span>
                                                 </td>
+                                                <td><span class="badge bg-primary">{{ $banque->numero_compte }}</span></td>
                                                 <td>{{ $banque->designation }}</td>
                                                 <td>
                                                     @if ($banque->telephone)
@@ -81,6 +82,7 @@
                                                         <span class="text-muted">-</span>
                                                     @endif
                                                 </td>
+                                                <td>{{ number_format($banque->solde, 0, ',', ' ') }} FCFA</td>
                                                 <td class="text-center">
                                                     <a href="{{ route('gestions_banques.show', $banque->id) }}"
                                                         class="btn btn-sm btn-success" title="Voir">
@@ -126,6 +128,19 @@
                 <form action="{{ route('gestions_banques.store') }}" method="POST">
                     @csrf
                     <div class="modal-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="numero_compte" class="form-label small">Numéro de Compte <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="numero_compte" name="numero_compte"
+                                    placeholder="Numéro de compte de la banque" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="solde" class="form-label small">Solde</label>
+                                <input type="number" step="0.01" class="form-control" id="solde" name="solde"
+                                    placeholder="Solde de la banque" required>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="designation" class="form-label small">Dénomination <span

@@ -23,4 +23,12 @@ class Fournisseur extends Model
     {
         return $this->hasMany(Entree::class);
     }
+
+    /**
+     * Relation avec les achats
+     */
+    public function achats()
+    {
+        return $this->hasMany(Achat::class);
+    }
 }

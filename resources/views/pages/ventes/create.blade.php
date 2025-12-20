@@ -14,7 +14,7 @@
                 </nav>
             </div>
             <a href="{{ route('gestions_ventes.index') }}" class="btn btn-primary">
-                <i class="bi bi-arrow-left"></i>&nbsp; Retour à la liste
+                <i class="bi bi-arrow-left"></i>
             </a>
         </div>
     </div>

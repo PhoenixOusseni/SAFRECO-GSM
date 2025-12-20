@@ -36,6 +36,8 @@ class CaisseController extends Controller
         $caisse->telephone = $request->telephone;
         $caisse->email = $request->email;
         $caisse->adresse = $request->adresse;
+        $caisse->solde = $request->solde;
+        $caisse->numero_compte = $request->numero_compte;
         $caisse->save();
 
         return redirect()->route('gestions_caisses.index')->with('success', 'Caisse ajoutée avec succès.');
@@ -47,7 +49,19 @@ class CaisseController extends Controller
     public function show(String $id)
     {
         $caisse = Caisse::findOrFail($id);
-        return view('pages.caisses.show', compact('caisse'));
+
+        // Charger les encaissements et décaissements liés à cette caisse
+        $encaissements = $caisse->encaissements()
+            ->with(['vente', 'vente.client'])
+            ->orderBy('date_encaissement', 'desc')
+            ->get();
+
+        $decaissements = $caisse->decaissements()
+            ->with(['achat', 'achat.fournisseur'])
+            ->orderBy('date_decaissement', 'desc')
+            ->get();
+
+        return view('pages.caisses.show', compact('caisse', 'encaissements', 'decaissements'));
     }
 
     /**
@@ -70,6 +84,8 @@ class CaisseController extends Controller
             'telephone' => $request->telephone,
             'email' => $request->email,
             'adresse' => $request->adresse,
+            'solde' => $request->solde,
+            'numero_compte' => $request->numero_compte,
         ]);
 
         return redirect()->route('gestions_caisses.index')

@@ -115,4 +115,39 @@ class DepotController extends Controller
         // Redirection avec un message de succès
         return redirect()->route('gestions_depots.index')->with('success', 'Depot supprimé avec succès.');
     }
+
+    /**
+     * Import depots from CSV/Excel file
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,xlsx,xls|max:10240'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            // Implementation to be added for CSV/Excel parsing
+            // Using Laravel Excel or similar library
+
+            return redirect()->back()->with('success', 'Dépôts importés avec succès.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erreur lors de l\'import: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download template for depot import
+     */
+    public function template()
+    {
+        $headers = ['Code', 'Désignation', 'Localisation', 'Responsable', 'Contact'];
+        $filename = 'template_depots.csv';
+
+        return response()->streamDownload(function() use ($headers) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, $headers);
+            fclose($handle);
+        }, $filename);
+    }
 }

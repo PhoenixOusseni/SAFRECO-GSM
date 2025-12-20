@@ -8,7 +8,8 @@
                 <nav>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('gestions_decaissements.index') }}">Décaissements</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('gestions_decaissements.index') }}">Décaissements</a>
+                        </li>
                         <li class="breadcrumb-item active">Solder</li>
                     </ol>
                 </nav>
@@ -42,15 +43,18 @@
                                     <strong>N° Achat:</strong> {{ $decaissement->achat->numero_achat }}<br>
                                     <strong>Fournisseur:</strong> {{ $decaissement->achat->fournisseur->nom ?? 'N/A' }}<br>
                                     <strong>Montant Total:</strong>
-                                    <span class="text-primary fw-bold">{{ number_format($decaissement->montant, 0, ',', ' ') }}
+                                    <span
+                                        class="text-primary fw-bold">{{ number_format($decaissement->montant, 0, ',', ' ') }}
                                         FCFA</span>
                                 </div>
                                 <div class="col-md-6">
                                     <strong>Montant Décaissé:</strong>
-                                    <span class="text-success fw-bold">{{ number_format($decaissement->montant_decaisse, 0, ',', ' ') }}
+                                    <span
+                                        class="text-success fw-bold">{{ number_format($decaissement->montant_decaisse, 0, ',', ' ') }}
                                         FCFA</span><br>
                                     <strong>Reste à Décaisser:</strong>
-                                    <span class="text-warning fw-bold">{{ number_format($decaissement->reste, 0, ',', ' ') }}
+                                    <span
+                                        class="text-warning fw-bold">{{ number_format($decaissement->reste, 0, ',', ' ') }}
                                         FCFA</span><br>
                                     <strong>Progression:</strong>
                                     @php
@@ -61,7 +65,8 @@
                             </div>
                         </div>
 
-                        <form action="{{ route('gestions_decaissements.processSettle', $decaissement->id) }}" method="POST">
+                        <form action="{{ route('gestions_decaissements.processSettle', $decaissement->id) }}"
+                            method="POST">
                             @csrf
 
                             <div class="row">
@@ -83,15 +88,20 @@
                                             name="mode_paiement">
                                             <option value="">Sélectionner le mode</option>
                                             <option value="Espèces"
-                                                {{ $decaissement->mode_paiement == 'Espèces' ? 'selected' : '' }}>Espèces</option>
+                                                {{ $decaissement->mode_paiement == 'Espèces' ? 'selected' : '' }}>Espèces
+                                            </option>
                                             <option value="Chèque"
-                                                {{ $decaissement->mode_paiement == 'Chèque' ? 'selected' : '' }}>Chèque</option>
+                                                {{ $decaissement->mode_paiement == 'Chèque' ? 'selected' : '' }}>Chèque
+                                            </option>
                                             <option value="Virement"
-                                                {{ $decaissement->mode_paiement == 'Virement' ? 'selected' : '' }}>Virement</option>
+                                                {{ $decaissement->mode_paiement == 'Virement' ? 'selected' : '' }}>Virement
+                                            </option>
                                             <option value="Carte"
-                                                {{ $decaissement->mode_paiement == 'Carte' ? 'selected' : '' }}>Carte</option>
+                                                {{ $decaissement->mode_paiement == 'Carte' ? 'selected' : '' }}>Carte
+                                            </option>
                                             <option value="Mobile Money"
-                                                {{ $decaissement->mode_paiement == 'Mobile Money' ? 'selected' : '' }}>Mobile
+                                                {{ $decaissement->mode_paiement == 'Mobile Money' ? 'selected' : '' }}>
+                                                Mobile
                                                 Money
                                             </option>
                                         </select>
@@ -108,7 +118,8 @@
                                         <label class="form-label">Montant à Décaisser *</label>
                                         <input type="number" step="0.01"
                                             class="form-control @error('montant_solde') is-invalid @enderror"
-                                            id="montant_solde" name="montant_solde" value="{{ old('montant_solde', $decaissement->reste) }}"
+                                            id="montant_solde" name="montant_solde"
+                                            value="{{ old('montant_solde', $decaissement->reste) }}"
                                             max="{{ $decaissement->reste }}" required>
                                         <small class="form-text text-muted">
                                             Montant maximum: {{ number_format($decaissement->reste, 0, ',', ' ') }} FCFA
@@ -129,12 +140,40 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Observation</label>
-                                <textarea class="form-control" name="observation" rows="3"
-                                    placeholder="Ajoutez une observation si nécessaire">{{ old('observation') }}</textarea>
+                                <textarea class="form-control" name="observation" rows="3" placeholder="Ajoutez une observation si nécessaire">{{ old('observation') }}</textarea>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <label for="banque_id" class="small">Banque</label>
+                                    <select class="form-select" name="banque_id" id="banque_id">
+                                        <option value="">-- Sélectionner une banque --</option>
+                                        @foreach (App\Models\Banque::all() as $banque)
+                                            <option value="{{ $banque->id }}">{{ $banque->designation }} -
+                                                {{ $banque->code }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="caisse_id" class="small">Caisse</label>
+                                    <select class="form-select" name="caisse_id" id="caisse_id">
+                                        <option value="">-- Sélectionner une caisse --</option>
+                                        @foreach (App\Models\Caisse::all() as $caisse)
+                                            <option value="{{ $caisse->id }}">{{ $caisse->designation }} -
+                                                {{ $caisse->code }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label for="reference" class="small">Référence</label>
+                                    <input type="text" class="form-control" id="reference" name="reference"
+                                        value="{{ old('reference') }}" placeholder="Référence du paiement">
+                                </div>
                             </div>
 
                             <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle"></i> <strong>Attention:</strong> Vérifiez que le montant à
+                                <i class="bi bi-exclamation-triangle"></i> <strong>Attention:</strong> Vérifiez que le
+                                montant à
                                 décaisser ne dépasse pas le reste à payer.
                             </div>
 
@@ -145,7 +184,8 @@
                                     <button type="submit" class="btn btn-success">
                                         <i class="bi bi-check-circle"></i> Enregistrer le Solde
                                     </button>
-                                    <a href="{{ route('gestions_decaissements.show', $decaissement->id) }}" class="btn btn-secondary">
+                                    <a href="{{ route('gestions_decaissements.show', $decaissement->id) }}"
+                                        class="btn btn-secondary">
                                         <i class="bi bi-arrow-left"></i> Annuler
                                     </a>
                                 </div>

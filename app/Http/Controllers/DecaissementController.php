@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Decaissement;
 use App\Models\DecaissementSolde;
 use App\Models\Achat;
+use App\Models\Banque;
+use App\Models\Caisse;
 use App\Models\Fournisseur;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -39,8 +41,10 @@ class DecaissementController extends Controller
     public function create()
     {
         $achats = Achat::with('fournisseur')->where('statut', '!=', 'valide')->orderBy('numero_achat')->get();
+        $banques = Banque::all();
+        $caisses = Caisse::all();
 
-        return view('pages.decaissements.create', compact('achats'));
+        return view('pages.decaissements.create', compact('achats', 'banques', 'caisses'));
     }
 
     /**
@@ -65,8 +69,23 @@ class DecaissementController extends Controller
                 'montant_decaisse' => $request->montant_decaisse,
                 'reste' => $reste,
                 'mode_paiement' => $request->mode_paiement,
-                'achat_id' => $request->achat_id,
+                'banque_id' => $request->banque_id,
+                'caisse_id' => $request->caisse_id,
+                'reference' => $request->reference,
             ]);
+
+            // Mettre à jour le solde de la banque ou de la caisse (soustraction pour décaissement)
+            if ($request->banque_id) {
+                $banque = Banque::findOrFail($request->banque_id);
+                $banque->solde = $banque->solde - $request->montant_decaisse;
+                $banque->save();
+            }
+
+            if ($request->caisse_id) {
+                $caisse = Caisse::findOrFail($request->caisse_id);
+                $caisse->solde = $caisse->solde - $request->montant_decaisse;
+                $caisse->save();
+            }
 
             // Changer le statut de l'achat à "valide" avec query builder
             DB::table('achats')->where('id', $request->achat_id)
@@ -114,22 +133,59 @@ class DecaissementController extends Controller
         try {
             DB::beginTransaction();
 
+            // Récupérer l'ancien montant et les anciennes références avant modification
+            $ancien_montant_decaisse = $decaissement->montant_decaisse;
+            $ancienne_banque_id = $decaissement->banque_id;
+            $ancienne_caisse_id = $decaissement->caisse_id;
+
             // Récupérer l'achat
-            $achat = Achat::findOrFail($request['achat_id']);
+            $achat = Achat::findOrFail($request->achat_id);
 
             // Calculer le reste
-            $reste = $achat->montant_total - $request['montant_decaisse'];
+            $reste = $achat->montant_total - $request->montant_decaisse;
 
             // Mettre à jour le décaissement
             $decaissement->update([
-                'date_decaissement' => $request['date_decaissement'],
-                'achat_id' => $request['achat_id'],
+                'date_decaissement' => $request->date_decaissement,
+                'achat_id' => $request->achat_id,
                 'montant' => $achat->montant_total,
-                'montant_decaisse' => $request['montant_decaisse'],
+                'montant_decaisse' => $request->montant_decaisse,
                 'reste' => $reste,
-                'mode_paiement' => $request['mode_paiement'],
-                'achat_id' => $request['achat_id'],
+                'mode_paiement' => $request->mode_paiement,
+                'banque_id' => $request->banque_id,
+                'caisse_id' => $request->caisse_id,
+                'reference' => $request->reference,
             ]);
+
+            // Rétablir le solde de l'ancienne banque ou caisse (ajouter car c'était une sortie)
+            if ($ancienne_banque_id) {
+                $ancienne_banque = Banque::find($ancienne_banque_id);
+                if ($ancienne_banque) {
+                    $ancienne_banque->solde = $ancienne_banque->solde + $ancien_montant_decaisse;
+                    $ancienne_banque->save();
+                }
+            }
+
+            if ($ancienne_caisse_id) {
+                $ancienne_caisse = Caisse::find($ancienne_caisse_id);
+                if ($ancienne_caisse) {
+                    $ancienne_caisse->solde = $ancienne_caisse->solde + $ancien_montant_decaisse;
+                    $ancienne_caisse->save();
+                }
+            }
+
+            // Mettre à jour le solde de la nouvelle banque ou caisse (soustraire)
+            if ($request->banque_id) {
+                $banque = Banque::findOrFail($request->banque_id);
+                $banque->solde = $banque->solde - $request->montant_decaisse;
+                $banque->save();
+            }
+
+            if ($request->caisse_id) {
+                $caisse = Caisse::findOrFail($request->caisse_id);
+                $caisse->solde = $caisse->solde - $request->montant_decaisse;
+                $caisse->save();
+            }
 
             DB::commit();
 
@@ -151,13 +207,36 @@ class DecaissementController extends Controller
     public function destroy(String $id)
     {
         try {
+            DB::beginTransaction();
+
             $decaissement = Decaissement::findOrFail($id);
+
+            // Rétablir le solde de la banque ou de la caisse avant suppression (ajouter car c'était une sortie)
+            if ($decaissement->banque_id) {
+                $banque = Banque::find($decaissement->banque_id);
+                if ($banque) {
+                    $banque->solde = $banque->solde + $decaissement->montant_decaisse;
+                    $banque->save();
+                }
+            }
+
+            if ($decaissement->caisse_id) {
+                $caisse = Caisse::find($decaissement->caisse_id);
+                if ($caisse) {
+                    $caisse->solde = $caisse->solde + $decaissement->montant_decaisse;
+                    $caisse->save();
+                }
+            }
+
             $decaissement->delete();
+
+            DB::commit();
 
             return redirect()
                 ->route('gestions_decaissements.index')
                 ->with('success', 'Décaissement supprimé avec succès.');
         } catch (\Exception $e) {
+            DB::rollBack();
             return redirect()
                 ->back()
                 ->with('error', 'Erreur lors de la suppression: ' . $e->getMessage());
@@ -256,6 +335,23 @@ class DecaissementController extends Controller
             $decaissement->reste -= $montant_solde;
             $decaissement->mode_paiement = $request->mode_paiement ?? $decaissement->mode_paiement;
             $decaissement->save();
+
+            // Mettre à jour le solde de la banque ou de la caisse sélectionnée lors du solde
+            // Utiliser la banque/caisse du formulaire de solde si fournie, sinon utiliser celle du décaissement d'origine
+            $banque_id_solde = $request->input('banque_id') ?? $decaissement->banque_id;
+            $caisse_id_solde = $request->input('caisse_id') ?? $decaissement->caisse_id;
+
+            if ($banque_id_solde) {
+                $banque = Banque::findOrFail($banque_id_solde);
+                $banque->solde = $banque->solde - $montant_solde;
+                $banque->save();
+            }
+
+            if ($caisse_id_solde) {
+                $caisse = Caisse::findOrFail($caisse_id_solde);
+                $caisse->solde = $caisse->solde - $montant_solde;
+                $caisse->save();
+            }
 
             // Enregistrer le solde dans l'historique
             DecaissementSolde::create([

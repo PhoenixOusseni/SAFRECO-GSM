@@ -21,7 +21,7 @@
 
     <section class="section">
         <div class="row">
-            <div class="col-lg-8 offset-lg-2">
+            <div class="col-lg-9 offset-lg-2">
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">
@@ -168,6 +168,31 @@
                                         <small class="form-text text-muted d-block mt-2">
                                             <i class="bi bi-info-circle"></i> Maximum à solder: <strong>{{ number_format($reste, 2, ',', ' ') }} F CFA</strong>
                                         </small>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="banque_id" class="small">Banque</label>
+                                        <select class="form-select" name="banque_id" id="banque_id">
+                                            <option value="">-- Sélectionner une banque --</option>
+                                            @foreach(App\Models\Banque::all() as $banque)
+                                                <option value="{{ $banque->id }}">{{ $banque->designation }} - {{ $banque->code }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="caisse_id" class="small">Caisse</label>
+                                        <select class="form-select" name="caisse_id" id="caisse_id">
+                                            <option value="">-- Sélectionner une caisse --</option>
+                                            @foreach(App\Models\Caisse::all() as $caisse)
+                                                <option value="{{ $caisse->id }}">{{ $caisse->designation }} - {{ $caisse->code }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="reference" class="small">Référence</label>
+                                        <input type="text" class="form-control" id="reference" name="reference" value="{{ old('reference') }}" placeholder="Référence du paiement">
                                     </div>
                                 </div>
 

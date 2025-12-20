@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Encaissement;
 use App\Models\Vente;
 use App\Models\Client;
+use App\Models\Banque;
+use App\Models\Caisse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -28,8 +30,7 @@ class EncaissementController extends Controller
     {
         $encaissements = Encaissement::with(['vente', 'vente.client'])
             ->whereRaw('montant_encaisse < montant')
-            ->orderBy('date_encaissement', 'asc')
-            ->paginate(15);
+            ->orderBy('date_encaissement', 'asc')->paginate(15);
 
         return view('pages.encaissements.unsettled', compact('encaissements'));
     }
@@ -91,6 +92,23 @@ class EncaissementController extends Controller
                 'notes' => ($encaissement->notes ?? '') . "\n[" . now()->format('d/m/Y H:i') . "] Solde de " . number_format($validated['montant_solde'], 2) . " F CFA - Mode: " . $validated['mode_paiement_solde'] . ($validated['notes'] ? ' - ' . $validated['notes'] : ''),
             ]);
 
+            // Mettre à jour le solde de la banque ou de la caisse sélectionnée lors du solde
+            // Utiliser la banque/caisse du formulaire de solde si fournie, sinon utiliser celle de l'encaissement d'origine
+            $banque_id_solde = $request->input('banque_id') ?? $encaissement->banque_id;
+            $caisse_id_solde = $request->input('caisse_id') ?? $encaissement->caisse_id;
+
+            if ($banque_id_solde) {
+                $banque = Banque::findOrFail($banque_id_solde);
+                $banque->solde = $banque->solde + $validated['montant_solde'];
+                $banque->save();
+            }
+
+            if ($caisse_id_solde) {
+                $caisse = Caisse::findOrFail($caisse_id_solde);
+                $caisse->solde = $caisse->solde + $validated['montant_solde'];
+                $caisse->save();
+            }
+
             // Enregistrer le solde dans un historique (table helper)
             DB::table('encaissement_soldes')->insert([
                 'encaissement_id' => $encaissement->id,
@@ -122,7 +140,9 @@ class EncaissementController extends Controller
     public function create()
     {
         $ventes = Vente::with('client')->get();
-        return view('pages.encaissements.create', compact('ventes'));
+        $banques = Banque::all();
+        $caisses = Caisse::all();
+        return view('pages.encaissements.create', compact('ventes', 'banques', 'caisses'));
     }
 
     /**
@@ -130,34 +150,41 @@ class EncaissementController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'date_encaissement' => 'required|date',
-            'vente_id' => 'required|exists:ventes,id',
-            'montant' => 'required|numeric|min:0',
-            'montant_encaisse' => 'required|numeric|min:0',
-            'mode_paiement' => 'nullable|string|max:255',
-            'statut' => 'nullable|string|max:255',
-        ]);
-
         try {
             DB::beginTransaction();
 
             // Calculer le reste
-            $reste = $validated['montant'] - $validated['montant_encaisse'];
+            $reste = $request->montant - $request->montant_encaisse;
 
             // Créer l'encaissement
             $encaissement = Encaissement::create([
-                'date_encaissement' => $validated['date_encaissement'],
-                'vente_id' => $validated['vente_id'],
-                'montant' => $validated['montant'],
-                'montant_encaisse' => $validated['montant_encaisse'],
+                'date_encaissement' => $request->date_encaissement,
+                'vente_id' => $request->vente_id,
+                'montant' => $request->montant,
+                'montant_encaisse' => $request->montant_encaisse,
                 'reste' => $reste,
-                'mode_paiement' => $validated['mode_paiement'],
+                'mode_paiement' => $request->mode_paiement,
+                'banque_id' => $request->banque_id ?? null,
+                'caisse_id' => $request->caisse_id ?? null,
+                'reference' => $request->reference ?? null,
             ]);
+
+            // Mettre à jour le solde de la banque ou de la caisse
+            if ($request->banque_id) {
+                $banque = Banque::findOrFail($request->banque_id);
+                $banque->solde = $banque->solde + $request->montant_encaisse;
+                $banque->save();
+            }
+
+            if ($request->caisse_id) {
+                $caisse = Caisse::findOrFail($request->caisse_id);
+                $caisse->solde = $caisse->solde + $request->montant_encaisse;
+                $caisse->save();
+            }
 
             // Changer le statut de la vente à "encaisse" avec query builder
             DB::table('ventes')
-                ->where('id', $validated['vente_id'])
+                ->where('id', $request->vente_id)
                 ->update(['statut' => 'validee']);
 
             DB::commit();
@@ -201,27 +228,57 @@ class EncaissementController extends Controller
     {
         $encaissement = Encaissement::findOrFail($id);
 
-        // Validation des données
-        $validated = $request->validate([
-            'date_encaissement' => 'required|date',
-            'montant' => 'required|numeric|min:0',
-            'montant_encaisse' => 'required|numeric|min:0',
-            'mode_paiement' => 'nullable|string|max:255',
-        ]);
-
         try {
             DB::beginTransaction();
 
+            // Récupérer l'ancien montant et les anciennes références avant modification
+            $ancien_montant_encaisse = $encaissement->montant_encaisse;
+            $ancienne_banque_id = $encaissement->banque_id;
+            $ancienne_caisse_id = $encaissement->caisse_id;
+
             // Calculer le reste
-            $reste = $validated['montant'] - $validated['montant_encaisse'];
+            $reste = $request->montant - $request->montant_encaisse;
 
             $encaissement->update([
-                'date_encaissement' => $validated['date_encaissement'],
-                'montant' => $validated['montant'],
-                'montant_encaisse' => $validated['montant_encaisse'],
+                'date_encaissement' => $request->date_encaissement,
+                'montant' => $request->montant,
+                'montant_encaisse' => $request->montant_encaisse,
                 'reste' => $reste,
-                'mode_paiement' => $validated['mode_paiement'],
+                'mode_paiement' => $request->mode_paiement,
+                'banque_id' => $request->banque_id ?? null,
+                'caisse_id' => $request->caisse_id ?? null,
+                'reference' => $request->reference ?? null,
             ]);
+
+            // Rétablir le solde de l'ancienne banque ou caisse
+            if ($ancienne_banque_id) {
+                $ancienne_banque = Banque::find($ancienne_banque_id);
+                if ($ancienne_banque) {
+                    $ancienne_banque->solde = $ancienne_banque->solde - $ancien_montant_encaisse;
+                    $ancienne_banque->save();
+                }
+            }
+
+            if ($ancienne_caisse_id) {
+                $ancienne_caisse = Caisse::find($ancienne_caisse_id);
+                if ($ancienne_caisse) {
+                    $ancienne_caisse->solde = $ancienne_caisse->solde - $ancien_montant_encaisse;
+                    $ancienne_caisse->save();
+                }
+            }
+
+            // Mettre à jour le solde de la nouvelle banque ou caisse
+            if ($request->banque_id) {
+                $banque = Banque::findOrFail($request->banque_id);
+                $banque->solde = $banque->solde + $request->montant_encaisse;
+                $banque->save();
+            }
+
+            if ($request->caisse_id) {
+                $caisse = Caisse::findOrFail($request->caisse_id);
+                $caisse->solde = $caisse->solde + $request->montant_encaisse;
+                $caisse->save();
+            }
 
             DB::commit();
 
@@ -244,11 +301,34 @@ class EncaissementController extends Controller
     {
         $encaissement = Encaissement::findOrFail($id);
         try {
+            DB::beginTransaction();
+
+            // Rétablir le solde de la banque ou de la caisse avant suppression
+            if ($encaissement->banque_id) {
+                $banque = Banque::find($encaissement->banque_id);
+                if ($banque) {
+                    $banque->solde = $banque->solde - $encaissement->montant_encaisse;
+                    $banque->save();
+                }
+            }
+
+            if ($encaissement->caisse_id) {
+                $caisse = Caisse::find($encaissement->caisse_id);
+                if ($caisse) {
+                    $caisse->solde = $caisse->solde - $encaissement->montant_encaisse;
+                    $caisse->save();
+                }
+            }
+
             $encaissement->delete();
+
+            DB::commit();
+
             return redirect()
                 ->route('gestions_encaissements.index')
                 ->with('success', 'Encaissement supprimé avec succès.');
         } catch (\Exception $e) {
+            DB::rollBack();
             return redirect()
                 ->back()
                 ->with('error', 'Erreur lors de la suppression: ' . $e->getMessage());

@@ -53,5 +53,13 @@ class Achat extends Model
     {
         return $this->belongsTo(Fournisseur::class);
     }
+
+    /**
+     * Relation avec les décaissements
+     */
+    public function decaissements()
+    {
+        return $this->hasMany(Decaissement::class);
+    }
 }
 

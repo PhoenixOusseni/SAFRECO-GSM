@@ -137,9 +137,32 @@
                                         <input type="number" class="form-control" id="reste" step="0.01"
                                             readonly placeholder="0.00">
                                         <small class="form-text text-muted">
-                                            <i class="bi bi-calculator"></i> Calculé automatiquement: Montant Total -
-                                            Montant Encaissé
+                                            <i class="bi bi-calculator"></i> Calculé automatiquement
                                         </small>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="banque_id" class="small">Banque</label>
+                                        <select class="form-select" name="banque_id" id="banque_id">
+                                            <option value="">-- Sélectionner une banque --</option>
+                                            @foreach($banques as $banque)
+                                                <option value="{{ $banque->id }}">{{ $banque->designation }} - {{ $banque->code }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="caisse_id" class="small">Caisse</label>
+                                        <select class="form-select" name="caisse_id" id="caisse_id">
+                                            <option value="">-- Sélectionner une caisse --</option>
+                                            @foreach($caisses as $caisse)
+                                                <option value="{{ $caisse->id }}">{{ $caisse->designation }} - {{ $caisse->code }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="reference" class="small">Référence</label>
+                                        <input type="text" class="form-control" id="reference" name="reference" value="{{ old('reference') }}" placeholder="Référence du paiement">
                                     </div>
                                 </div>
                             </div>

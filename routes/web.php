@@ -20,6 +20,7 @@ use App\Http\Controllers\VenteController;
 use App\Http\Controllers\EncaissementController;
 use App\Http\Controllers\AchatController;
 use App\Http\Controllers\DecaissementController;
+use App\Http\Controllers\UserController;
 
 
 
@@ -118,4 +119,34 @@ Route::middleware('auth')->group(function () {
         Route::get('stocks-par-article/{articleId?}', [RapportStockController::class, 'stocksParArticle'])->name('rapports.stocks-par-article');
         Route::get('valorisation-stock', [RapportStockController::class, 'valorisationStock'])->name('rapports.valorisation-stock');
     });
+
+    // Parametres et gestion des utilisateurs
+    Route::resource('utilisateurs/gestions_utilisateurs', UserController::class);
+
+    // gestion des parametres de l'application
+    Route::get('parametres', [PageController::class, 'parametres'])->name('parametres');
+    Route::put('parametres/update', [EnteteController::class, 'update'])->name('parametres.update');
+
+    // Import de données
+    Route::post('clients/import', [ClientController::class, 'import'])->name('clients.import');
+    Route::get('clients/template', [ClientController::class, 'template'])->name('clients.template');
+
+    Route::post('fournisseurs/import', [FournisseurController::class, 'import'])->name('fournisseurs.import');
+    Route::get('fournisseurs/template', [FournisseurController::class, 'template'])->name('fournisseurs.template');
+
+    Route::post('articles/import', [ArticleController::class, 'import'])->name('articles.import');
+    Route::get('articles/template', [ArticleController::class, 'template'])->name('articles.template');
+
+    Route::post('depots/import', [DepotController::class, 'import'])->name('depots.import');
+    Route::get('depots/template', [DepotController::class, 'template'])->name('depots.template');
+
+    // Gestion des stocks
+    Route::post('stocks/import', [StockController::class, 'import'])->name('stocks.import');
+    Route::post('stocks/reset', [StockController::class, 'reset'])->name('stocks.reset');
+    Route::get('stocks/export', [StockController::class, 'export'])->name('stocks.export');
+
+    // Maintenance
+    Route::post('cache/clear', [PageController::class, 'clearCache'])->name('cache.clear');
+    Route::post('logs/clear', [PageController::class, 'clearLogs'])->name('logs.clear');
+    Route::post('migrate', [PageController::class, 'migrate'])->name('migrate');
 });

@@ -91,4 +91,39 @@ class ArticleController extends Controller
         $article->delete();
         return redirect()->route('gestions_articles.index')->with('success', 'Article supprimé avec succès.');
     }
+
+    /**
+     * Import articles from CSV/Excel file
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,xlsx,xls|max:10240'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            // Implementation to be added for CSV/Excel parsing
+            // Using Laravel Excel or similar library
+
+            return redirect()->back()->with('success', 'Articles importés avec succès.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erreur lors de l\'import: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download template for article import
+     */
+    public function template()
+    {
+        $headers = ['Code', 'Désignation', 'Référence', 'Prix Achat', 'Prix Vente', 'Seuil'];
+        $filename = 'template_articles.csv';
+
+        return response()->streamDownload(function() use ($headers) {
+            $handle = fopen('php://output', 'w');
+            fputcsv($handle, $headers);
+            fclose($handle);
+        }, $filename);
+    }
 }

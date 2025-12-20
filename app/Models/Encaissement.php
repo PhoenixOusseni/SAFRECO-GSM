@@ -12,7 +12,10 @@ class Encaissement extends Model
         'montant_encaisse',
         'reste',
         'mode_paiement',
+        'reference',
         'vente_id',
+        'banque_id',
+        'caisse_id',
     ];
 
     protected $casts = [
@@ -28,6 +31,22 @@ class Encaissement extends Model
     public function vente()
     {
         return $this->belongsTo(Vente::class);
+    }
+
+    /**
+     * Relation avec la banque
+     */
+    public function banque()
+    {
+        return $this->belongsTo(Banque::class);
+    }
+
+    /**
+     * Relation avec la caisse
+     */
+    public function caisse()
+    {
+        return $this->belongsTo(Caisse::class);
     }
 
     /**

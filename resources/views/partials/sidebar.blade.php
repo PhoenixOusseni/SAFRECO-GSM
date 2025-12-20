@@ -22,11 +22,6 @@
                         <i class="bi bi-circle"></i><span>Journal des achats</span>
                     </a>
                 </li>
-                <li>
-                    <a href="#">
-                        <i class="bi bi-circle"></i><span>Solde Client</span>
-                    </a>
-                </li>
             </ul>
         </li><!-- End Components Nav -->
         <li class="nav-item">
@@ -124,5 +119,11 @@
                 <span>Caisse</span>
             </a>
         </li><!-- End Blank Page Nav -->
+        <li>
+            <a class="nav-link collapsed" href="{{ route('gestions_utilisateurs.index') }}">
+                <i class="bi bi-person-circle"></i>
+                <span>Utilisateurs</span>
+            </a>
+        </li>
     </ul>
 </aside><!-- End Sidebar-->

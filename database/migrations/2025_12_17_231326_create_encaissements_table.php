@@ -17,8 +17,12 @@ return new class extends Migration {
             $table->decimal('montant_encaisse', 15, 2);
             $table->decimal('reste', 15, 2);
             $table->text('mode_paiement')->nullable();
+            $table->string('reference')->nullable();
 
             $table->foreignId('vente_id')->constrained('ventes')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreignId('banque_id')->nullable()->constrained('banques')->onDelete('cascade')->onUpdate('cascade');
+            $table->foreignId('caisse_id')->nullable()->constrained('caisses')->onDelete('cascade')->onUpdate('cascade');
+
             $table->timestamps();
         });
     }
