@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    @include('pages.encaissements.style')
+</head>
+
+<body>
+    <div class="print-container">
+        <!-- Boutons d'impression (cachés à l'impression) -->
+        <div class="print-buttons no-print">
+            <button class="btn-print" onclick="window.print()">
+                <i class="bi bi-printer"></i> Imprimer
+            </button>
+            <a href="{{ route('gestions_ventes.show', $vente->id) }}" class="btn-back">
+                <i class="bi bi-arrow-left"></i> Retour
+            </a>
+        </div>
+
+        @php
+            $entete = \App\Models\Entete::first();
+        @endphp
+
+        <!-- En-tête personnalisé avec infos de la table entete -->
+        <div class="header">
+            @if ($entete && $entete->logo)
+                <div class="header-logo">
+                    <img src="{{ asset('storage/' . $entete->logo) }}" alt="Logo">
+                </div>
+            @endif
+
+            <div class="header-info">
+                <div class="header-title">{{ $entete->titre ?? 'SAFRECO-GSM' }}</div>
+                @if ($entete && $entete->sous_titre)
+                    <div class="header-subtitle">{{ $entete->sous_titre }}</div>
+                @endif
+                <div class="header-contact">
+                    @if ($entete && $entete->telephone)
+                        <div class="header-contact-item">
+                            <span>☎ {{ $entete->telephone }}</span>
+                        </div>
+                    @endif
+                    @if ($entete && $entete->email)
+                        <div class="header-contact-item">
+                            <span>✉ {{ $entete->email }}</span>
+                        </div>
+                    @endif
+                    @if ($entete && $entete->adresse)
+                        <div class="header-contact-item">
+                            <span>📍 {{ $entete->adresse }}</span>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="header-receipt">
+                <div class="header-receipt-no">BORDEREAU DE VENTE</div>
+                <div class="header-receipt-id">#{{ str_pad($vente->id, 6, '0', STR_PAD_LEFT) }}</div>
+                <div class="receipt-date">{{ $vente->date_vente->format('d/m/Y H:i:s') }}</div>
+            </div>
+        </div>
+
+        <!-- Informations de la vente -->
+        <div class="info-section">
+            <div class="two-columns">
+                <div class="column">
+                    <div class="info-row">
+                        <span class="info-label">N° Vente :</span>
+                        <span class="info-value"><strong>{{ $vente->numero_vente }}</strong></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Date Vente :</span>
+                        <span class="info-value">{{ $vente->date_vente->format('d/m/Y') }}</span>
+                    </div>
+                </div>
+                <div class="column">
+                    <div class="info-row">
+                        <span class="info-label">Nom Client :</span>
+                        <span class="info-value">{{ $vente->client->raison_sociale ?? $vente->client->nom }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Statut :</span>
+                        <span class="badge badge-primary">{{ $vente->statut ?? 'N/A' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableau articles -->
+        @if ($vente->details && count($vente->details) > 0)
+            <div style="margin-top: 25px;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 5%; text-align: center;">#</th>
+                            <th style="width: 10%;">Code</th>
+                            <th style="width: 30%;">Article</th>
+                            <th style="width: 15%; text-align: center;">Dépôt</th>
+                            <th style="width: 10%; text-align: center;">Quantité</th>
+                            <th style="width: 15%; text-align: right;">Prix Unitaire</th>
+                            <th style="width: 15%; text-align: right;">Montant</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($vente->details as $index => $detail)
+                            <tr>
+                                <td style="text-align: center;">{{ $index + 1 }}</td>
+                                <td>{{ $detail->article->code ?? 'N/A' }}</td>
+                                <td>{{ $detail->article->designation ?? 'N/A' }}</td>
+                                <td style="text-align: center;">{{ $detail->depot->designation ?? 'N/A' }}</td>
+                                <td style="text-align: center;">{{ $detail->quantite }}</td>
+                                <td style="text-align: right;">{{ number_format($detail->prix_vente, 0, ',', ' ') }}
+                                    F</td>
+                                <td style="text-align: right; font-weight: 600;">
+                                    {{ number_format($detail->prix_total, 0, ',', ' ') }} F</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="6" style="text-align: right; font-weight: 600; border-top: 2px solid #000;">
+                                MONTANT TOTAL :
+                            </td>
+                            <td style="text-align: right; font-weight: 600; border-top: 2px solid #000;">
+                                {{ number_format($vente->montant_total, 0, ',', ' ') }} F
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        @endif
+
+        <!-- Section Signature -->
+        <div class="signature-section">
+            <div class="signature-box">
+                <strong>Signature Vendeur</strong>
+                <div style="margin-top: 20px;">_________________</div>
+            </div>
+            <div class="signature-box">
+                <strong>Signature Client</strong>
+                <div style="margin-top: 20px;">_________________</div>
+            </div>
+        </div>
+
+        <!-- Pied de page -->
+        <div class="footer">
+            <p>
+                Ce bordereau de vente a été généré le {{ now()->format('d/m/Y à H:i:s') }} par le système de gestion
+                SAFRECO-GSM.
+            </p>
+            <p style="margin-top: 10px;">
+                <strong>Merci de conserver ce document à titre de justificatif.</strong>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.location.hash === '#print') {
+                window.print();
+            }
+        });
+    </script>
+</body>
+
+</html>
