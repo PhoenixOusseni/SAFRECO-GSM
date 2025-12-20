@@ -120,6 +120,13 @@ Route::middleware('auth')->group(function () {
         Route::get('valorisation-stock', [RapportStockController::class, 'valorisationStock'])->name('rapports.valorisation-stock');
     });
 
+    // Inventaires des stocks
+    Route::post('inventaires/{id}/valider', [App\Http\Controllers\InventaireController::class, 'valider'])->name('gestions_inventaires.valider');
+    Route::post('inventaires/{id}/annuler', [App\Http\Controllers\InventaireController::class, 'annuler'])->name('gestions_inventaires.annuler');
+    Route::get('inventaires/{id}/print', [App\Http\Controllers\InventaireController::class, 'print'])->name('gestions_inventaires.print');
+    Route::delete('inventaires/{id}/article/{detailId}', [App\Http\Controllers\InventaireController::class, 'removeArticle'])->name('gestions_inventaires.removeArticle');
+    Route::resource('inventaires/gestions_inventaires', App\Http\Controllers\InventaireController::class);
+
     // Parametres et gestion des utilisateurs
     Route::resource('utilisateurs/gestions_utilisateurs', UserController::class);
 

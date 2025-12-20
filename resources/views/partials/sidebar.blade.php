@@ -45,7 +45,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#">
+                    <a href="{{ route('gestions_inventaires.index') }}">
                         <i class="bi bi-circle"></i><span>Inventaire</span>
                     </a>
                 </li>
