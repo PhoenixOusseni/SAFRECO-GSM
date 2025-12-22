@@ -320,7 +320,7 @@
                                                         <td><span class="badge bg-info">{{ $banque->code }}</span></td>
                                                         <td>{{ $banque->iban ?? '-' }}</td>
                                                         <td>
-                                                            <a href="{{ route('banques.edit', $banque->id) }}"
+                                                            <a href="{{ route('gestions_banques.edit', $banque->id) }}"
                                                                 class="btn btn-sm btn-warning">
                                                                 <i class="bi bi-pencil"></i>
                                                             </a>
