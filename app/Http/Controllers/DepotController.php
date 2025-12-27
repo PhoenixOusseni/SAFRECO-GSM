@@ -150,4 +150,30 @@ class DepotController extends Controller
             fclose($handle);
         }, $filename);
     }
+
+    /**
+     * Search depots for Select2 AJAX
+     */
+    public function search(Request $request)
+    {
+        $search = $request->get('search', '');
+
+        $depots = Depot::where(function($query) use ($search) {
+            $query->where('designation', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('localisation', 'like', "%{$search}%");
+        })
+        ->limit(20)
+        ->get()
+        ->map(function($depot) {
+            return [
+                'id' => $depot->id,
+                'designation' => $depot->designation,
+                'code' => $depot->code,
+                'localisation' => $depot->localisation
+            ];
+        });
+
+        return response()->json($depots);
+    }
 }

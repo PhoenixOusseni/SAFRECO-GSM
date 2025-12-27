@@ -1,6 +1,22 @@
 @extends('layouts.master')
 
 @section('content')
+    <!-- CDN Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .select2-container--default .select2-selection--single {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            height: 38px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px;
+            padding-left: 12px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px;
+        }
+    </style>
     <div class="pagetitle">
         <div class="d-flex justify-content-between align-items-center">
             <div class="mx-0">
@@ -63,7 +79,7 @@
                             <div class="row mb-3">
                                 <div class="col-md-6">
                                     <label for="fournisseur_id" class="small">Fournisseur *</label>
-                                    <select class="form-select" id="fournisseur_id" name="fournisseur_id" required>
+                                    <select class="form-select select2-fournisseur" id="fournisseur_id" name="fournisseur_id" required>
                                         <option value="">-- Sélectionner un fournisseur --</option>
                                         @foreach($fournisseurs as $fournisseur)
                                             <option value="{{ $fournisseur->id }}"
@@ -96,4 +112,35 @@
             </div>
         </div>
     </section>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.select2-fournisseur').select2({
+                width: '100%',
+                placeholder: 'Rechercher un fournisseur...',
+                allowClear: true,
+                ajax: {
+                    url: '{{ route("fournisseurs.search") }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) {
+                        return { search: params.term };
+                    },
+                    processResults: function(data) {
+                        return {
+                            results: data.map(function(fournisseur) {
+                                return {
+                                    id: fournisseur.id,
+                                    text: fournisseur.raison_sociale || fournisseur.nom
+                                };
+                            })
+                        };
+                    },
+                    cache: true
+                }
+            });
+        });
+    </script>
 @endsection

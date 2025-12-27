@@ -15,12 +15,12 @@ class EnteteSeeder extends Seeder
     {
         DB::table('entetes')->insert([
             [
-                'titre' => 'SAFRECO SARL',
+                'titre' => 'SOCITE 001',
                 'adresse' => '123 Rue Principale, Ville, Pays',
-                'description' => 'Entreprise spécialisée dans la vente de matériel GSM et accessoires.',
+                'description' => 'Description de la société 001',
                 'telephone' => '+1234567890',
-                'sous_titre' => 'Votre partenaire de confiance en téléphonie mobile',
-                'email' => 'contact@safreco.com',
+                'sous_titre' => 'Sous-titre de la société 001',
+                'email' => 'info@societe001.com',
             ],
         ]);
     }

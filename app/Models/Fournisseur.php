@@ -8,7 +8,9 @@ class Fournisseur extends Model
 {
     protected $fillable = [
         'code',
+        'type',
         'raison_sociale',
+        'nom',
         'contact',
         'email',
         'telephone',

@@ -30,6 +30,8 @@
 
     @include('partials.script')
 
+    @yield('scripts')
+
 </body>
 
 </html>

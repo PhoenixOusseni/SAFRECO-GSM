@@ -1,6 +1,22 @@
 @extends('layouts.master')
 
 @section('content')
+    <!-- CDN Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .select2-container--default .select2-selection--single {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            height: 38px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px;
+            padding-left: 12px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px;
+        }
+    </style>
     <div class="pagetitle">
         <div class="d-flex justify-content-between align-items-center">
             <div class="mx-0">
@@ -49,12 +65,12 @@
                             @csrf
                             @method('PUT')
 
-                            <!-- Informations générales -->
+                            <!-- Informations gï¿½nï¿½rales -->
                             <div class="mb-4" style="background: rgb(232, 240, 243); padding: 15px; border-radius: 5px;">
                                 <h6 class="mb-3"><i class="bi bi-info-circle"></i> Informations de la Vente</h6>
                                 <div class="row">
                                     <div class="col-md-4 mb-3">
-                                        <label for="numero_vente" class="small">Numéro de Vente</label>
+                                        <label for="numero_vente" class="small">NumÃ©ro de Vente</label>
                                         <input type="text" class="form-control" id="numero_vente"
                                                value="{{ $vente->numero_vente }}" disabled>
                                     </div>
@@ -69,13 +85,13 @@
                                     </div>
                                     <div class="col-md-4 mb-3">
                                         <label for="client_id" class="small">Client <span class="text-danger">*</span></label>
-                                        <select class="form-select @error('client_id') is-invalid @enderror"
+                                        <select class="form-select select2-client @error('client_id') is-invalid @enderror"
                                                 id="client_id" name="client_id" required>
-                                            <option value="">-- Sélectionner un client --</option>
+                                            <option value="">-- SÃ©lectionner un client --</option>
                                             @foreach($clients as $client)
                                                 <option value="{{ $client->id }}"
                                                     {{ old('client_id', $vente->client_id) == $client->id ? 'selected' : '' }}>
-                                                    {{ $client->raison_sociale }}
+                                                    {{ $client->raison_sociale ? $client->raison_sociale : $client->nom }}
                                                 </option>
                                             @endforeach
                                         </select>
@@ -86,7 +102,7 @@
                                 </div>
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
-                                        <label for="numero_vehicule" class="small">Numéro de Véhicule</label>
+                                        <label for="numero_vehicule" class="small">NumÃ©ro de VÃ©hicule</label>
                                         <input type="text" class="form-control @error('numero_vehicule') is-invalid @enderror"
                                                id="numero_vehicule" name="numero_vehicule"
                                                value="{{ old('numero_vehicule', $vente->numero_vehicule) }}"
@@ -121,7 +137,7 @@
 
                             <!-- Articles -->
                             <div class="mb-4" style="background: rgb(243, 246, 248); padding: 15px; border-radius: 5px;">
-                                <h6 class="mb-3"><i class="bi bi-bag"></i> Articles à Vendre</h6>
+                                <h6 class="mb-3"><i class="bi bi-bag"></i> Articles Ã  Vendre</h6>
                                 <div id="articles-container">
                                     @foreach($vente->details as $index => $detail)
                                         <div class="article-row mb-3 p-3"
@@ -129,8 +145,8 @@
                                             <div class="row">
                                                 <div class="col-md-3 mb-3">
                                                     <label class="small">Article <span class="text-danger">*</span></label>
-                                                    <select class="form-select article-select" name="articles[{{ $index }}][article_id]" required>
-                                                        <option value="">-- Sélectionner --</option>
+                                                    <select class="form-select select2-article article-select" name="articles[{{ $index }}][article_id]" required>
+                                                        <option value="">-- SÃ©lectionner --</option>
                                                         @foreach($articles as $article)
                                                             <option value="{{ $article->id }}"
                                                                     data-prix="{{ $article->prix_vente }}"
@@ -141,9 +157,9 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-3 mb-3">
-                                                    <label class="small">Dépôt <span class="text-danger">*</span></label>
-                                                    <select class="form-select depot-select" name="articles[{{ $index }}][depot_id]" required>
-                                                        <option value="">-- Sélectionner --</option>
+                                                    <label class="small">DÃ©pÃ´t <span class="text-danger">*</span></label>
+                                                    <select class="form-select select2-depot depot-select" name="articles[{{ $index }}][depot_id]" required>
+                                                        <option value="">-- SÃ©lectionner --</option>
                                                         @foreach($depots as $depot)
                                                             <option value="{{ $depot->id }}"
                                                                     {{ $detail->depot_id == $depot->id ? 'selected' : '' }}>
@@ -153,7 +169,7 @@
                                                     </select>
                                                 </div>
                                                 <div class="col-md-2 mb-3">
-                                                    <label class="small">Quantité <span class="text-danger">*</span></label>
+                                                    <label class="small">QuantitÃ© <span class="text-danger">*</span></label>
                                                     <input type="number" class="form-control quantite-input"
                                                            name="articles[{{ $index }}][quantite]"
                                                            value="{{ $detail->quantite }}"
@@ -202,8 +218,61 @@
         </div>
     </section>
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         let articleIndex = {{ $vente->details->count() }};
+
+        // Initialiser Select2
+        function initSelect2Client(el) {
+            $(el || '.select2-client').select2({
+                width: '100%',
+                placeholder: 'Rechercher un client...',
+                allowClear: true,
+                ajax: {
+                    url: '{{ route("clients.search") }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) { return { search: params.term }; },
+                    processResults: function(data) {
+                        return { results: data.map(c => ({ id: c.id, text: c.raison_sociale || c.nom })) };
+                    }
+                }
+            });
+        }
+
+        function initSelect2Article(el) {
+            $(el || '.select2-article').select2({
+                width: '100%',
+                placeholder: 'Rechercher un article...',
+                allowClear: true,
+                ajax: {
+                    url: '{{ route("articles.search") }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) { return { search: params.term }; },
+                    processResults: function(data) {
+                        return { results: data.map(a => ({ id: a.id, text: a.designation + ' (' + a.code + ')', prix: a.prix_vente })) };
+                    }
+                }
+            });
+        }
+
+        function initSelect2Depot(el) {
+            $(el || '.select2-depot').select2({
+                width: '100%',
+                placeholder: 'SÃ©lectionner un dÃ©pÃ´t...',
+                ajax: {
+                    url: '{{ route("depots.search") }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) { return { search: params.term }; },
+                    processResults: function(data) {
+                        return { results: data.map(d => ({ id: d.id, text: d.designation })) };
+                    }
+                }
+            });
+        }
 
         // Ajouter un nouvel article
         document.getElementById('add-article').addEventListener('click', function() {
@@ -216,8 +285,8 @@
                 <div class="row">
                     <div class="col-md-3 mb-3">
                         <label class="small">Article <span class="text-danger">*</span></label>
-                        <select class="form-select article-select" name="articles[${articleIndex}][article_id]" required>
-                            <option value="">-- Sélectionner --</option>
+                        <select class="form-select select2-article article-select" name="articles[${articleIndex}][article_id]" required>
+                            <option value="">-- SÃ©lectionner --</option>
                             @foreach($articles as $article)
                                 <option value="{{ $article->id }}" data-prix="{{ $article->prix_vente }}">
                                     {{ $article->designation }} ({{ $article->code }})
@@ -226,16 +295,16 @@
                         </select>
                     </div>
                     <div class="col-md-3 mb-3">
-                        <label class="small">Dépôt <span class="text-danger">*</span></label>
-                        <select class="form-select depot-select" name="articles[${articleIndex}][depot_id]" required>
-                            <option value="">-- Sélectionner --</option>
+                        <label class="small">DÃ©pÃ´t <span class="text-danger">*</span></label>
+                        <select class="form-select select2-depot depot-select" name="articles[${articleIndex}][depot_id]" required>
+                            <option value="">-- SÃ©lectionner --</option>
                             @foreach($depots as $depot)
                                 <option value="{{ $depot->id }}">{{ $depot->designation }}</option>
                             @endforeach
                         </select>
                     </div>
                     <div class="col-md-2 mb-3">
-                        <label class="small">Quantité <span class="text-danger">*</span></label>
+                        <label class="small">QuantitÃ© <span class="text-danger">*</span></label>
                         <input type="number" class="form-control quantite-input"
                                name="articles[${articleIndex}][quantite]" placeholder="0" step="0.01" min="0.01" required>
                     </div>
@@ -260,8 +329,10 @@
 
             container.appendChild(newArticle);
             articleIndex++;
-
-            // Ajouter les événements aux nouveaux champs
+            // Initialiser Select2 sur la nouvelle ligne
+            initSelect2Article(newArticle.querySelector('.select2-article'));
+            initSelect2Depot(newArticle.querySelector('.select2-depot'));
+            // Ajouter les ï¿½vï¿½nements aux nouveaux champs
             addArticleEvents(newArticle);
         });
 
@@ -270,32 +341,31 @@
             if (e.target.classList.contains('remove-article') || e.target.closest('.remove-article')) {
                 const articlesCount = document.querySelectorAll('.article-row').length;
                 if (articlesCount > 1) {
-                    e.target.closest('.article-row').remove();
+                    const row = e.target.closest('.article-row');
+                    $(row).find('.select2-article, .select2-depot').select2('destroy');
+                    row.remove();
                 } else {
                     alert('Vous devez avoir au moins un article dans la vente.');
                 }
             }
         });
 
-        // Fonction pour ajouter les événements à une ligne d'article
+        // Fonction pour ajouter les ï¿½vï¿½nements ï¿½ une ligne d'article
         function addArticleEvents(row) {
             const articleSelect = row.querySelector('.article-select');
             const depotSelect = row.querySelector('.depot-select');
             const stockInput = row.querySelector('.stock-disponible');
             const prixVenteInput = row.querySelector('.prix-vente-input');
 
-            // Charger le prix de vente par défaut lors de la sélection d'un article
-            articleSelect.addEventListener('change', function() {
-                const selectedOption = this.options[this.selectedIndex];
-                const prixVente = selectedOption.getAttribute('data-prix');
-                if (prixVente) {
-                    prixVenteInput.value = prixVente;
-                }
+            // Charger le prix avec Select2
+            $(articleSelect).on('select2:select', function(e) {
+                const data = e.params.data;
+                if (data.prix) prixVenteInput.value = data.prix;
                 checkStock(row);
             });
 
-            // Vérifier le stock lors de la sélection du dépôt
-            depotSelect.addEventListener('change', function() {
+            // VÃ©rifier le stock avec Select2
+            $(depotSelect).on('select2:select', function() {
                 checkStock(row);
             });
 
@@ -305,7 +375,7 @@
             }
         }
 
-        // Vérifier le stock disponible
+        // Vï¿½rifier le stock disponible
         function checkStock(row) {
             const articleId = row.querySelector('.article-select').value;
             const depotId = row.querySelector('.depot-select').value;
@@ -342,9 +412,16 @@
             }
         }
 
-        // Ajouter les événements aux lignes existantes
-        document.querySelectorAll('.article-row').forEach(row => {
-            addArticleEvents(row);
+        // Initialiser au chargement
+        $(document).ready(function() {
+            initSelect2Client();
+            initSelect2Article();
+            initSelect2Depot();
+
+            // Ajouter les Ã©vÃ©nements aux lignes existantes
+            document.querySelectorAll('.article-row').forEach(row => {
+                addArticleEvents(row);
+            });
         });
     </script>
 @endsection

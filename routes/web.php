@@ -109,6 +109,12 @@ Route::middleware('auth')->group(function () {
     // Route API pour récupérer le stock disponible (AJAX)
     Route::get('api/stock-disponible', [TransfertController::class, 'getStockDisponible'])->name('api.stock-disponible');
 
+    // Routes de recherche pour Select2
+    Route::get('clients/search', [ClientController::class, 'search'])->name('clients.search');
+    Route::get('articles/search', [ArticleController::class, 'search'])->name('articles.search');
+    Route::get('depots/search', [DepotController::class, 'search'])->name('depots.search');
+    Route::get('fournisseurs/search', [FournisseurController::class, 'search'])->name('fournisseurs.search');
+
     // Routes pour les rapports de stock
     Route::prefix('rapports')->group(function () {
         Route::get('dashboard', [RapportStockController::class, 'dashboard'])->name('rapports.dashboard');

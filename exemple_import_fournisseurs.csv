@@ -1,0 +1,4 @@
+Type,Raison Sociale,Nom,Adresse,Téléphone,Email,Ville
+entreprise,Entreprise ABC,Jean Dupont,123 Rue de la Paix,0102030405,contact@abc.com,Paris
+particulier,,Marie Martin,456 Avenue Victor Hugo,0607080910,marie@email.com,Lyon
+entreprise,Société XYZ,Pierre Durand,789 Boulevard des Champs,0504030201,info@xyz.com,Marseille

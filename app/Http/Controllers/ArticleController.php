@@ -97,16 +97,107 @@ class ArticleController extends Controller
      */
     public function import(Request $request)
     {
-        $request->validate([
-            'file' => 'required|file|mimes:csv,xlsx,xls|max:10240'
-        ]);
-
         try {
-            $file = $request->file('file');
-            // Implementation to be added for CSV/Excel parsing
-            // Using Laravel Excel or similar library
+            // Validation du fichier
+            $request->validate([
+                'file' => 'required|file|mimes:csv,txt|max:2048'
+            ]);
 
-            return redirect()->back()->with('success', 'Articles importés avec succès.');
+            $file = $request->file('file');
+
+            // Ouvrir le fichier CSV
+            $handle = fopen($file->getRealPath(), 'r');
+
+            // Détecter le séparateur (virgule ou point-virgule)
+            $firstLine = fgets($handle);
+            rewind($handle);
+
+            $delimiter = ',';
+            if (substr_count($firstLine, ';') > substr_count($firstLine, ',')) {
+                $delimiter = ';';
+            }
+
+            // Ignorer la première ligne (en-têtes)
+            $header = fgetcsv($handle, 1000, $delimiter);
+
+            $imported = 0;
+            $errors = [];
+
+            // Obtenir le dernier ID pour la génération des codes
+            $lastId = Article::max('id') ?? 0;
+
+            // Parcourir chaque ligne du fichier
+            while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
+                // Ignorer les lignes complètement vides (toutes les colonnes vides)
+                $hasData = false;
+                foreach ($row as $cell) {
+                    if (!empty(trim($cell))) {
+                        $hasData = true;
+                        break;
+                    }
+                }
+
+                if (!$hasData) {
+                    continue;
+                }
+
+                try {
+                    // Mapper les colonnes du CSV
+                    // Format attendu: Type, Raison Sociale, Nom, Adresse, Téléphone, Email, Ville
+                    $designation = trim($row[0] ?? '');
+                    $reference = trim($row[1] ?? '');
+                    $prix_achat = floatval(str_replace(',', '.', trim($row[2] ?? '0')));
+                    $prix_vente = floatval(str_replace(',', '.', trim($row[3] ?? '0')));
+
+                    // Debug: Log des données lues (à retirer en production)
+                    \Log::info('Import ligne', [
+                        'row' => $row,
+                        'designation' => $designation,
+                        'reference' => $reference,
+                        'prix_achat' => $prix_achat,
+                        'prix_vente' => $prix_vente,
+                    ]);
+
+                    // Générer un code automatique unique
+                    $lastId++;
+                    $code = 'ART-' . str_pad($lastId, 5, '0', STR_PAD_LEFT);
+
+                    // Vérifier si le code existe déjà (sécurité)
+                    while (Article::where('code', $code)->exists()) {
+                        $lastId++;
+                        $code = 'ART-' . str_pad($lastId, 5, '0', STR_PAD_LEFT);
+                    }
+
+                    // Créer un nouveau article
+                    Article::create([
+                        'code' => $code,
+                        'designation' => $designation,
+                        'reference' => $reference,
+                        'prix_achat' => $prix_achat,
+                        'prix_vente' => $prix_vente,
+                        'seuil' => 10, // Seuil par défaut
+                    ]);
+
+                    $imported++;
+
+                } catch (\Exception $e) {
+                    $errors[] = "Ligne " . ($imported + 2) . ": " . $e->getMessage() . " | Données: " . implode(' | ', $row);
+                }
+            }
+
+            fclose($handle);
+
+            // Message de succès avec détails
+            $message = "$imported article(s) importé(s) avec succès.";
+
+            if (!empty($errors)) {
+                $message .= " " . count($errors) . " erreur(s) détectée(s).";
+                // Afficher les erreurs dans la session
+                session()->flash('errors_detail', $errors);
+            }
+
+            return redirect()->back()->with('success', $message);
+
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Erreur lors de l\'import: ' . $e->getMessage());
         }
@@ -117,7 +208,7 @@ class ArticleController extends Controller
      */
     public function template()
     {
-        $headers = ['Code', 'Désignation', 'Référence', 'Prix Achat', 'Prix Vente', 'Seuil'];
+        $headers = ['Désignation', 'Référence', 'Prix Achat', 'Prix Vente', 'Seuil'];
         $filename = 'template_articles.csv';
 
         return response()->streamDownload(function() use ($headers) {
@@ -125,5 +216,32 @@ class ArticleController extends Controller
             fputcsv($handle, $headers);
             fclose($handle);
         }, $filename);
+    }
+
+    /**
+     * Search articles for Select2 AJAX
+     */
+    public function search(Request $request)
+    {
+        $search = $request->get('search', '');
+
+        $articles = Article::where(function($query) use ($search) {
+            $query->where('designation', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('reference', 'like', "%{$search}%");
+        })
+        ->limit(20)
+        ->get()
+        ->map(function($article) {
+            return [
+                'id' => $article->id,
+                'designation' => $article->designation,
+                'code' => $article->code,
+                'reference' => $article->reference,
+                'prix_vente' => $article->prix_vente
+            ];
+        });
+
+        return response()->json($articles);
     }
 }

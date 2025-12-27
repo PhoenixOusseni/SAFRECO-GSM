@@ -115,16 +115,115 @@ class ClientController extends Controller
      */
     public function import(Request $request)
     {
-        $request->validate([
-            'file' => 'required|file|mimes:csv,xlsx,xls|max:10240'
-        ]);
-
         try {
-            $file = $request->file('file');
-            // Implementation to be added for CSV/Excel parsing
-            // Using Laravel Excel or similar library
+            // Validation du fichier
+            $request->validate([
+                'file' => 'required|file|mimes:csv,txt|max:2048'
+            ]);
 
-            return redirect()->back()->with('success', 'Clients importés avec succès.');
+            $file = $request->file('file');
+
+            // Ouvrir le fichier CSV
+            $handle = fopen($file->getRealPath(), 'r');
+
+            // Détecter le séparateur (virgule ou point-virgule)
+            $firstLine = fgets($handle);
+            rewind($handle);
+
+            $delimiter = ',';
+            if (substr_count($firstLine, ';') > substr_count($firstLine, ',')) {
+                $delimiter = ';';
+            }
+
+            // Ignorer la première ligne (en-têtes)
+            $header = fgetcsv($handle, 1000, $delimiter);
+
+            $imported = 0;
+            $errors = [];
+
+            // Obtenir le dernier ID pour la génération des codes
+            $lastId = Client::max('id') ?? 0;
+
+            // Parcourir chaque ligne du fichier
+            while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
+                // Ignorer les lignes complètement vides (toutes les colonnes vides)
+                $hasData = false;
+                foreach ($row as $cell) {
+                    if (!empty(trim($cell))) {
+                        $hasData = true;
+                        break;
+                    }
+                }
+
+                if (!$hasData) {
+                    continue;
+                }
+
+                try {
+                    // Mapper les colonnes du CSV
+                    // Format attendu: Type, Raison Sociale, Nom, Adresse, Téléphone, Email, Ville
+                    $type = trim($row[0] ?? 'entreprise');
+                    $raison_sociale = trim($row[1] ?? '');
+                    $nom = trim($row[2] ?? '');
+                    $adresse = trim($row[3] ?? '');
+                    $telephone = trim($row[4] ?? '');
+                    $email = trim($row[5] ?? '');
+                    $ville = trim($row[6] ?? '');
+
+                    // Debug: Log des données lues (à retirer en production)
+                    \Log::info('Import ligne', [
+                        'row' => $row,
+                        'type' => $type,
+                        'raison_sociale' => $raison_sociale,
+                        'nom' => $nom,
+                        'adresse' => $adresse,
+                        'telephone' => $telephone,
+                        'email' => $email,
+                        'ville' => $ville
+                    ]);
+
+                    // Générer un code automatique unique
+                    $lastId++;
+                    $code = 'FRS-' . str_pad($lastId, 5, '0', STR_PAD_LEFT);
+
+                    // Vérifier si le code existe déjà (sécurité)
+                    while (Client::where('code', $code)->exists()) {
+                        $lastId++;
+                        $code = 'CLT-' . str_pad($lastId, 5, '0', STR_PAD_LEFT);
+                    }
+
+                    // Créer un nouveau fournisseur
+                    Client::create([
+                        'code' => $code,
+                        'type' => $type,
+                        'raison_sociale' => $raison_sociale,
+                        'nom' => $nom,
+                        'adresse' => $adresse,
+                        'telephone' => $telephone,
+                        'email' => $email,
+                        'ville' => $ville,
+                    ]);
+
+                    $imported++;
+
+                } catch (\Exception $e) {
+                    $errors[] = "Ligne " . ($imported + 2) . ": " . $e->getMessage() . " | Données: " . implode(' | ', $row);
+                }
+            }
+
+            fclose($handle);
+
+            // Message de succès avec détails
+            $message = "$imported client(s) importé(s) avec succès.";
+
+            if (!empty($errors)) {
+                $message .= " " . count($errors) . " erreur(s) détectée(s).";
+                // Afficher les erreurs dans la session
+                session()->flash('errors_detail', $errors);
+            }
+
+            return redirect()->back()->with('success', $message);
+
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Erreur lors de l\'import: ' . $e->getMessage());
         }
@@ -135,7 +234,7 @@ class ClientController extends Controller
      */
     public function template()
     {
-        $headers = ['Code', 'Type', 'Raison Sociale', 'Nom', 'Adresse', 'Téléphone', 'Email', 'Ville'];
+        $headers = ['Type', 'Raison Sociale', 'Nom', 'Adresse', 'Téléphone', 'Email', 'Ville'];
         $filename = 'template_clients.csv';
 
         return response()->streamDownload(function() use ($headers) {
@@ -143,5 +242,33 @@ class ClientController extends Controller
             fputcsv($handle, $headers);
             fclose($handle);
         }, $filename);
+    }
+
+    /**
+     * Search clients for Select2 AJAX
+     */
+    public function search(Request $request)
+    {
+        $search = $request->get('search', '');
+
+        $clients = Client::where(function($query) use ($search) {
+            $query->where('raison_sociale', 'like', "%{$search}%")
+                  ->orWhere('nom', 'like', "%{$search}%")
+                  ->orWhere('code', 'like', "%{$search}%")
+                  ->orWhere('telephone', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+        })
+        ->limit(20)
+        ->get()
+        ->map(function($client) {
+            return [
+                'id' => $client->id,
+                'raison_sociale' => $client->raison_sociale,
+                'nom' => $client->nom,
+                'code' => $client->code
+            ];
+        });
+
+        return response()->json($clients);
     }
 }

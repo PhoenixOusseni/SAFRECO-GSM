@@ -1,6 +1,22 @@
 @extends('layouts.master')
 
 @section('content')
+    <!-- CDN Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .select2-container--default .select2-selection--single {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            height: 38px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px;
+            padding-left: 12px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px;
+        }
+    </style>
     <div class="pagetitle">
         <div class="d-flex justify-content-between align-items-center">
             <div class="mx-0">
@@ -56,7 +72,7 @@
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label for="client_id" class="small">Client</label>
-                                        <select class="form-select" id="client_id" name="client_id">
+                                        <select class="form-select select2-client" id="client_id" name="client_id">
                                             <option value="">-- Sélectionner un client --</option>
                                             @foreach ($clients as $client)
                                                 <option value="{{ $client->id }}">
@@ -96,7 +112,7 @@
                                         <div class="row">
                                             <div class="col-md-4 mb-3">
                                                 <label class="small">Article <span class="text-danger">*</span></label>
-                                                <select class="form-select article-select" name="articles[]" required>
+                                                <select class="form-select select2-article article-select" name="articles[]" required>
                                                     <option value="">-- Sélectionner un article --</option>
                                                     @foreach ($articles as $article)
                                                         <option value="{{ $article->id }}">{{ $article->designation }}
@@ -106,7 +122,7 @@
                                             </div>
                                             <div class="col-md-3 mb-3">
                                                 <label class="small">Dépôt <span class="text-danger">*</span></label>
-                                                <select class="form-select" name="depots[]" required>
+                                                <select class="form-select select2-depot depot-select" name="depots[]" required>
                                                     <option value="">-- Sélectionner un dépôt --</option>
                                                     @foreach ($depots as $depot)
                                                         <option value="{{ $depot->id }}">{{ $depot->designation }}
@@ -156,8 +172,85 @@
     </section>
 @endsection
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    // Initialiser Select2 pour client
+    function initSelect2Client(el) {
+        $(el || '.select2-client').select2({
+            width: '100%',
+            placeholder: 'Rechercher un client...',
+            allowClear: true,
+            ajax: {
+                url: '{{ route("clients.search") }}',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) { return { search: params.term }; },
+                processResults: function(data) {
+                    return {
+                        results: data.map(function(c) {
+                            return { id: c.id, text: c.raison_sociale || c.nom };
+                        })
+                    };
+                },
+                cache: true
+            }
+        });
+    }
+
+    // Initialiser Select2 pour article
+    function initSelect2Article(el) {
+        $(el || '.select2-article').select2({
+            width: '100%',
+            placeholder: 'Rechercher un article...',
+            allowClear: true,
+            ajax: {
+                url: '{{ route("articles.search") }}',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) { return { search: params.term }; },
+                processResults: function(data) {
+                    return {
+                        results: data.map(function(a) {
+                            return {
+                                id: a.id,
+                                text: a.designation + ' (' + a.code + ')',
+                                prix: a.prix_vente
+                            };
+                        })
+                    };
+                }
+            }
+        });
+    }
+
+    // Initialiser Select2 pour dépôt
+    function initSelect2Depot(el) {
+        $(el || '.select2-depot').select2({
+            width: '100%',
+            placeholder: 'Sélectionner un dépôt...',
+            ajax: {
+                url: '{{ route("depots.search") }}',
+                dataType: 'json',
+                delay: 250,
+                data: function(params) { return { search: params.term }; },
+                processResults: function(data) {
+                    return {
+                        results: data.map(function(d) {
+                            return { id: d.id, text: d.designation };
+                        })
+                    };
+                }
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        // Initialiser Select2
+        initSelect2Client();
+        initSelect2Article();
+        initSelect2Depot();
+
         // Ajouter un article
         document.getElementById('add-article').addEventListener('click', function() {
             const container = document.getElementById('articles-container');
@@ -169,6 +262,11 @@
             });
 
             container.appendChild(newRow);
+
+            // Initialiser Select2 sur la nouvelle ligne
+            initSelect2Article(newRow.querySelector('.select2-article'));
+            initSelect2Depot(newRow.querySelector('.select2-depot'));
+
             attachRemoveListener(newRow);
         });
 
@@ -176,6 +274,7 @@
         function attachRemoveListener(row) {
             row.querySelector('.remove-article').addEventListener('click', function() {
                 if (document.querySelectorAll('.article-row').length > 1) {
+                    $(row).find('.select2-article, .select2-depot').select2('destroy');
                     row.remove();
                 } else {
                     alert('Vous devez garder au moins un article');

@@ -12,14 +12,34 @@
                     </ol>
                 </nav>
             </div>
-            <a href="{{ route('gestions_fournisseurs.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-lg"></i>&nbsp; Ajouter un Fournisseur
-            </a>
+            <div class="d-flex gap-2">
+                <a href="{{ route('gestions_fournisseurs.create') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i>&nbsp; Ajouter un Fournisseur
+                </a>
+                <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
+                    <i class="bi bi-upload"></i>&nbsp; Importer CSV
+                </button>
+                <a href="{{ route('fournisseurs.template') }}" class="btn btn-secondary">
+                    <i class="bi bi-download"></i>&nbsp; Télécharger Template
+                </a>
+            </div>
         </div>
     </div><!-- End Page Title -->
     <section class="section">
         <div class="row">
             <div class="col-lg-12">
+
+                @if(session('errors_detail'))
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Erreurs d'importation détectées:</h5>
+                        <ul class="mb-0">
+                            @foreach(session('errors_detail') as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
 
                 <div class="card">
                     <div class="card-body">
@@ -62,4 +82,47 @@
             </div>
         </div>
     </section>
+
+    <!-- Modal Import CSV -->
+    <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">Importer des Fournisseurs</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{{ route('fournisseurs.import') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="file" class="form-label">Fichier CSV</label>
+                            <input type="file" class="form-control" id="file" name="file" accept=".csv,.txt" required>
+                            <div class="form-text">
+                                Format attendu: Type, Raison Sociale, Nom, Adresse, Téléphone, Email, Ville
+                            </div>
+                        </div>
+                        <div class="alert alert-info">
+                            <strong>Note:</strong> Le fichier doit être au format CSV avec les colonnes dans l'ordre suivant:
+                            <ul class="mb-0 mt-2">
+                                <li>Type (entreprise ou particulier)</li>
+                                <li>Raison Sociale</li>
+                                <li>Nom</li>
+                                <li>Adresse</li>
+                                <li>Téléphone</li>
+                                <li>Email</li>
+                                <li>Ville</li>
+                            </ul>
+                            <p class="mt-2 mb-0"><strong>Le code sera généré automatiquement (FRS-00001, FRS-00002, etc.)</strong></p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Importer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection

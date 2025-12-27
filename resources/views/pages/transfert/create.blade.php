@@ -1,6 +1,22 @@
 @extends('layouts.master')
 
 @section('content')
+    <!-- CDN Select2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .select2-container--default .select2-selection--single {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            height: 38px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px;
+            padding-left: 12px;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 38px;
+        }
+    </style>
     <div class="pagetitle">
         <div class="d-flex justify-content-between align-items-center">
             <div class="mx-0">
@@ -85,7 +101,7 @@
                                 <div class="col-md-6">
                                     <label for="article_id" class="small">Article <span
                                             class="text-danger">*</span></label>
-                                    <select class="form-select @error('article_id') is-invalid @enderror" id="article_id"
+                                    <select class="form-select select2-article @error('article_id') is-invalid @enderror" id="article_id"
                                         name="article_id" required>
                                         <option value="">Sélectionner un article</option>
                                         @foreach ($articles as $article)
@@ -161,8 +177,38 @@
 @endsection
 
 @section('scripts')
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        // Initialiser Select2 pour article
+        function initSelect2Article(el) {
+            $(el || '.select2-article').select2({
+                width: '100%',
+                placeholder: 'Rechercher un article...',
+                allowClear: true,
+                ajax: {
+                    url: '{{ route("articles.search") }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function(params) { return { search: params.term }; },
+                    processResults: function(data) {
+                        return {
+                            results: data.map(function(a) {
+                                return {
+                                    id: a.id,
+                                    text: a.designation + ' (' + a.code + ')'
+                                };
+                            })
+                        };
+                    }
+                }
+            });
+        }
+
+        $(document).ready(function() {
+            // Initialiser Select2
+            initSelect2Article();
+
             const depotSourceSelect = document.getElementById('depot_source_id');
             const articleSelect = document.getElementById('article_id');
             const stockInfo = document.getElementById('stock-info');
@@ -193,9 +239,13 @@
             }
 
             depotSourceSelect.addEventListener('change', updateStockInfo);
-            articleSelect.addEventListener('change', updateStockInfo);
 
-            // V�rifier au chargement si les valeurs sont d�j� s�lectionn�es
+            // Écouter les changements de Select2
+            $(articleSelect).on('select2:select', function() {
+                updateStockInfo();
+            });
+
+            // Vérifier au chargement si les valeurs sont déjà sélectionnées
             if (depotSourceSelect.value && articleSelect.value) {
                 updateStockInfo();
             }
