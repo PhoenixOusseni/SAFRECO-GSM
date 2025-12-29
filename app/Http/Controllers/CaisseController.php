@@ -40,7 +40,7 @@ class CaisseController extends Controller
         $caisse->numero_compte = $request->numero_compte;
         $caisse->save();
 
-        return redirect()->route('gestions_caisses.index')->with('success', 'Caisse ajoutée avec succès.');
+        return redirect()->back()->with('success', 'Caisse ajoutée avec succès.');
     }
 
     /**
@@ -53,13 +53,11 @@ class CaisseController extends Controller
         // Charger les encaissements et décaissements liés à cette caisse
         $encaissements = $caisse->encaissements()
             ->with(['vente', 'vente.client'])
-            ->orderBy('date_encaissement', 'desc')
-            ->get();
+            ->orderBy('date_encaissement', 'desc')->get();
 
         $decaissements = $caisse->decaissements()
             ->with(['achat', 'achat.fournisseur'])
-            ->orderBy('date_decaissement', 'desc')
-            ->get();
+            ->orderBy('date_decaissement', 'desc')->get();
 
         return view('pages.caisses.show', compact('caisse', 'encaissements', 'decaissements'));
     }
@@ -88,7 +86,7 @@ class CaisseController extends Controller
             'numero_compte' => $request->numero_compte,
         ]);
 
-        return redirect()->route('gestions_caisses.index')
+        return redirect()->back()
             ->with('success', 'Caisse mise à jour avec succès.');
     }
 

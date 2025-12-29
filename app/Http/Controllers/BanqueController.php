@@ -17,14 +17,6 @@ class BanqueController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('pages.banques.create');
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -40,8 +32,7 @@ class BanqueController extends Controller
         $banque->solde = $request->solde;
         $banque->save();
 
-        return redirect()->route('gestions_banques.index')
-            ->with('success', 'Banque ajoutée avec succès.');
+        return redirect()->back()->with('success', 'Banque ajoutée avec succès.');
     }
 
     /**
@@ -59,8 +50,7 @@ class BanqueController extends Controller
 
         $decaissements = $banque->decaissements()
             ->with(['achat', 'achat.fournisseur'])
-            ->orderBy('date_decaissement', 'desc')
-            ->get();
+            ->orderBy('date_decaissement', 'desc')->get();
 
         return view('pages.banques.show', compact('banque', 'encaissements', 'decaissements'));
     }
@@ -88,8 +78,7 @@ class BanqueController extends Controller
             'numero_compte' => $request->numero_compte,
             'solde' => $request->solde,]);
 
-        return redirect()->route('gestions_banques.index')
-            ->with('success', 'Banque mise à jour avec succès.');
+        return redirect()->back()->with('success', 'Banque mise à jour avec succès.');
     }
 
     /**

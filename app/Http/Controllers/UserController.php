@@ -99,5 +99,78 @@ class UserController extends Controller
         return redirect()->route('utilisateurs.gestions_utilisateurs.index')
             ->with('success', 'Utilisateur supprimé avec succès.');
     }
+
+    /**
+     * Show the profile of the authenticated user.
+     */    public function profil()
+    {
+        $user = auth()->user();
+        return view('pages.users.profil', compact('user'));
+    }
+
+    /**
+     * Update the profile of the authenticated user.
+     */
+    public function updateProfil(Request $request, string $id)
+    {
+        $user = User::findOrFail($id);
+
+        // Validation des données
+        $rules = [
+            'nom' => 'required|string|max:255',
+            'prenom' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+        ];
+
+        // Si un nouveau mot de passe est fourni, on ajoute les règles de validation
+        if ($request->filled('password')) {
+            $rules['current_password'] = 'required';
+            $rules['password'] = 'required|string|min:8|confirmed';
+        }
+
+        $validated = $request->validate($rules);
+
+        // Vérifier le mot de passe actuel si un nouveau mot de passe est fourni
+        if ($request->filled('password')) {
+            if (!Hash::check($request->current_password, $user->password)) {
+                return redirect()->back()
+                    ->withErrors(['current_password' => 'Le mot de passe actuel est incorrect.'])
+                    ->withInput();
+            }
+            $user->password = Hash::make($request->password);
+        }
+
+        $user->nom = $request->nom;
+        $user->prenom = $request->prenom;
+        $user->email = $request->email;
+
+        $user->save();
+
+        return redirect()->back()
+            ->with('success', 'Profil mis à jour avec succès.');
+    }
+
+    // change password functionality can be added here if needed
+    public function updatePassword(Request $request, string $id)
+    {
+        $user = User::findOrFail($id);
+
+        $request->validate([
+            'current_password' => 'required',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return redirect()->back()
+                ->withErrors(['current_password' => 'Le mot de passe actuel est incorrect.'])
+                ->withInput();
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return redirect()->back()
+            ->with('success', 'Mot de passe mis à jour avec succès.');
+    }
 }
 

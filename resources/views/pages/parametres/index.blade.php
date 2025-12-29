@@ -15,6 +15,8 @@
         </div>
     </div><!-- End Page Title -->
 
+    @include('pages.parametres.addedModal')
+
     <section class="section">
         <div class="row">
             <!-- Configuration Générale -->
@@ -152,7 +154,8 @@
                                 <button type="submit" class="btn btn-success flex-grow-1">
                                     <i class="bi bi-upload"></i> Importer
                                 </button>
-                                <a href="{{ route('fournisseurs.template') }}" class="btn btn-outline-secondary flex-grow-1">
+                                <a href="{{ route('fournisseurs.template') }}"
+                                    class="btn btn-outline-secondary flex-grow-1">
                                     <i class="bi bi-file-earmark-spreadsheet"></i> Template
                                 </a>
                             </div>
@@ -196,75 +199,23 @@
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">
-                            <i class="bi bi-download"></i> Importer les Dépôts
-                        </h5>
-                        <p class="text-muted">Importez les dépôts depuis un fichier CSV/Excel</p>
-
-                        <form action="{{ route('depots.import') }}" method="POST" enctype="multipart/form-data">
-                            @csrf
-
-                            <div class="mb-3">
-                                <label for="depots_file" class="form-label">Fichier Dépôts</label>
-                                <input type="file" class="form-control" id="depots_file" name="file"
-                                    accept=".csv,.xlsx,.xls" required>
-                                <small class="text-muted">Formats acceptés: CSV, XLSX</small>
-                            </div>
-
-                            <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-success flex-grow-1">
-                                    <i class="bi bi-upload"></i> Importer
-                                </button>
-                                <a href="{{ route('depots.template') }}" class="btn btn-outline-secondary flex-grow-1">
-                                    <i class="bi bi-file-earmark-spreadsheet"></i> Template
-                                </a>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Gestion des Stocks -->
-            <div class="col-lg-12">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title">
                             <i class="bi bi-boxes"></i> Gestion des Stocks
                         </h5>
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Importer les Stocks</label>
-                                    <p class="text-muted">Initialisez les stocks des articles par dépôt</p>
-                                    <form action="{{ route('stocks.import') }}" method="POST"
-                                        enctype="multipart/form-data" class="d-inline">
-                                        @csrf
-                                        <div class="input-group">
-                                            <input type="file" class="form-control" name="file"
-                                                accept=".csv,.xlsx,.xls" required>
-                                            <button type="submit" class="btn btn-success">
-                                                <i class="bi bi-upload"></i> Importer
-                                            </button>
-                                        </div>
-                                        <small class="text-muted d-block mt-1">Template: Article ID, Dépôt ID, Quantité</small>
-                                    </form>
+                        <div class="mb-3">
+                            <label class="form-label">Importer les Stocks</label>
+                            <p class="text-muted">Initialisez les stocks des articles par dépôt</p>
+                            <form action="{{ route('stocks.import') }}" method="POST" enctype="multipart/form-data"
+                                class="d-inline">
+                                @csrf
+                                <div class="input-group">
+                                    <input type="file" class="form-control" name="file" accept=".csv,.xlsx,.xls"
+                                        required>
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="bi bi-upload"></i> Importer
+                                    </button>
                                 </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label">Actions</label>
-                                    <div class="d-flex gap-2">
-                                        <a href="{{ route('stocks.reset') }}" class="btn btn-warning flex-grow-1"
-                                            onclick="return confirm('Êtes-vous sûr de vouloir réinitialiser tous les stocks ?');">
-                                            <i class="bi bi-arrow-clockwise"></i> Réinitialiser
-                                        </a>
-                                        <a href="{{ route('stocks.export') }}" class="btn btn-info flex-grow-1">
-                                            <i class="bi bi-download"></i> Exporter
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
+                                <small class="text-muted d-block mt-1">Template: Article ID, Dépôt ID, Quantité</small>
+                            </form>
                         </div>
                     </div>
                 </div>
@@ -277,7 +228,6 @@
                         <h5 class="card-title">
                             <i class="bi bi-bank"></i> Gestion des Comptes Bancaires et Caisses
                         </h5>
-
                         <ul class="nav nav-tabs" id="comptesTab" role="tablist">
                             <li class="nav-item" role="presentation">
                                 <button class="nav-link active" id="banques-tab" data-bs-toggle="tab"
@@ -286,8 +236,8 @@
                                 </button>
                             </li>
                             <li class="nav-item" role="presentation">
-                                <button class="nav-link" id="caisses-tab" data-bs-toggle="tab"
-                                    data-bs-target="#caisses" type="button" role="tab">
+                                <button class="nav-link" id="caisses-tab" data-bs-toggle="tab" data-bs-target="#caisses"
+                                    type="button" role="tab">
                                     <i class="bi bi-cash-coin"></i> Caisses
                                 </button>
                             </li>
@@ -297,28 +247,32 @@
                             <div class="tab-pane fade show active" id="banques" role="tabpanel">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h6>Liste des Banques</h6>
-                                    <a href="{{ route('gestions_banques.create') }}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-plus-circle"></i> Ajouter une Banque
-                                    </a>
+
+                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#addBanqueModal">
+                                        <i class="bi bi-plus-circle"></i>&nbsp; Ajouter une Banque
+                                    </button>
                                 </div>
 
-                                @if(\App\Models\Banque::count() > 0)
+                                @if (\App\Models\Banque::count() > 0)
                                     <div class="table-responsive">
                                         <table class="table table-sm table-hover">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th>Nom</th>
                                                     <th>Code</th>
+                                                    <th>Nom</th>
                                                     <th>IBAN</th>
+                                                    <th>Solde</th>
                                                     <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @foreach (\App\Models\Banque::all() as $banque)
                                                     <tr>
-                                                        <td>{{ $banque->nom }}</td>
-                                                        <td><span class="badge bg-info">{{ $banque->code }}</span></td>
-                                                        <td>{{ $banque->iban ?? '-' }}</td>
+                                                        <td><span class="badge bg-success">{{ $banque->code }}</span></td>
+                                                        <td>{{ $banque->designation }}</td>
+                                                        <td>{{ $banque->numero_compte ?? '-' }}</td>
+                                                        <td>{{ number_format($banque->solde, 2, ',', ' ') }} {{ config('app.devise') }}</td>
                                                         <td>
                                                             <a href="{{ route('gestions_banques.edit', $banque->id) }}"
                                                                 class="btn btn-sm btn-warning">
@@ -340,30 +294,33 @@
                             <div class="tab-pane fade" id="caisses" role="tabpanel">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <h6>Liste des Caisses</h6>
-                                    <a href="{{ route('gestions_caisses.create') }}" class="btn btn-sm btn-primary">
-                                        <i class="bi bi-plus-circle"></i> Ajouter une Caisse
-                                    </a>
+                                    <button type="button" class="btn btn-primary" data-bs-toggle="modal"
+                                        data-bs-target="#addCaisseModal">
+                                        <i class="bi bi-plus-circle"></i>&nbsp; Ajouter une Caisse
+                                    </button>
                                 </div>
 
-                                @if(\App\Models\Caisse::count() > 0)
+                                @if (\App\Models\Caisse::count() > 0)
                                     <div class="table-responsive">
                                         <table class="table table-sm table-hover">
                                             <thead class="table-light">
                                                 <tr>
-                                                    <th>Nom</th>
                                                     <th>Code</th>
-                                                    <th>Responsable</th>
+                                                    <th>Nom</th>
+                                                    <th>IBAN</th>
+                                                    <th>Solde</th>
                                                     <th>Actions</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 @foreach (\App\Models\Caisse::all() as $caisse)
                                                     <tr>
-                                                        <td>{{ $caisse->nom }}</td>
                                                         <td><span class="badge bg-success">{{ $caisse->code }}</span></td>
-                                                        <td>{{ $caisse->responsable ?? '-' }}</td>
+                                                        <td>{{ $caisse->designation }}</td>
+                                                        <td>{{ $caisse->numero_compte ?? '-' }}</td>
+                                                        <td>{{ $caisse->solde }}</td>
                                                         <td>
-                                                            <a href="{{ route('caisses.edit', $caisse->id) }}"
+                                                            <a href="{{ route('gestions_caisses.edit', $caisse->id) }}"
                                                                 class="btn btn-sm btn-warning">
                                                                 <i class="bi bi-pencil"></i>
                                                             </a>

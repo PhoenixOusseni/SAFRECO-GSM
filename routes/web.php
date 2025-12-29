@@ -51,6 +51,8 @@ Route::middleware('auth')->group(function () {
     // Gestion des entrées (Articles dans depots)
     Route::resource('gestions_entrees', EntreeController::class);
     Route::get('entrees/print/{id}', [EntreeController::class, 'printEntree'])->name('entrees.print');
+    Route::post('entrees/import', [EntreeController::class, 'import'])->name('entrees.import');
+    Route::get('entrees/template', [EntreeController::class, 'template'])->name('entrees.template');
 
     // Gestion des sorties (Sorties d'articles des depots)
     Route::resource('gestions_sorties', SortieController::class);
@@ -135,31 +137,41 @@ Route::middleware('auth')->group(function () {
 
     // Parametres et gestion des utilisateurs
     Route::resource('utilisateurs/gestions_utilisateurs', UserController::class);
+    Route::get('profil', [UserController::class, 'profil'])->name('utilisateurs.profil');
+    Route::put('profil/update/{id}', [UserController::class, 'updateProfil'])->name('utilisateurs.updateProfil');
+    Route::put('utilisateurs/update_password/{id}', [UserController::class, 'updatePassword'])->name('utilisateurs.updatePassword');
 
     // gestion des parametres de l'application
     Route::get('parametres', [PageController::class, 'parametres'])->name('parametres');
     Route::put('parametres/update', [EnteteController::class, 'update'])->name('parametres.update');
 
     // Import de données
+    // Import des clients
     Route::post('clients/import', [ClientController::class, 'import'])->name('clients.import');
     Route::get('clients/template', [ClientController::class, 'template'])->name('clients.template');
 
+    // Import des fournisseurs
     Route::post('fournisseurs/import', [FournisseurController::class, 'import'])->name('fournisseurs.import');
     Route::get('fournisseurs/template', [FournisseurController::class, 'template'])->name('fournisseurs.template');
 
+    // Import des articles
     Route::post('articles/import', [ArticleController::class, 'import'])->name('articles.import');
     Route::get('articles/template', [ArticleController::class, 'template'])->name('articles.template');
 
+    // Import des depots
     Route::post('depots/import', [DepotController::class, 'import'])->name('depots.import');
     Route::get('depots/template', [DepotController::class, 'template'])->name('depots.template');
 
     // Gestion des stocks
-    Route::post('stocks/import', [StockController::class, 'import'])->name('stocks.import');
-    Route::post('stocks/reset', [StockController::class, 'reset'])->name('stocks.reset');
-    Route::get('stocks/export', [StockController::class, 'export'])->name('stocks.export');
+    Route::post('stocks/import', [EntreeController::class, 'import'])->name('stocks.import');
+    Route::post('stocks/reset', [EntreeController::class, 'reset'])->name('stocks.reset');
+    Route::get('stocks/export', [EntreeController::class, 'export'])->name('stocks.export');
 
     // Maintenance
     Route::post('cache/clear', [PageController::class, 'clearCache'])->name('cache.clear');
     Route::post('logs/clear', [PageController::class, 'clearLogs'])->name('logs.clear');
     Route::post('migrate', [PageController::class, 'migrate'])->name('migrate');
+
+    // Help
+    Route::get('help', [PageController::class, 'help'])->name('help');
 });

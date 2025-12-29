@@ -297,4 +297,157 @@ class EntreeController extends Controller
         $entree->load(['fournisseur', 'details.article', 'details.depot']);
         return view('pages.entrees.print', compact('entree'));
     }
+
+    // Import des entrées from CSV/Excel file
+    public function import(Request $request)
+    {
+        try {
+            // Validation du fichier
+            $request->validate([
+                'file' => 'required|file|mimes:csv,txt|max:2048'
+            ]);
+
+            $file = $request->file('file');
+
+            // Ouvrir le fichier CSV
+            $handle = fopen($file->getRealPath(), 'r');
+
+            // Détecter le séparateur (virgule ou point-virgule)
+            $firstLine = fgets($handle);
+            rewind($handle);
+
+            $delimiter = ',';
+            if (substr_count($firstLine, ';') > substr_count($firstLine, ',')) {
+                $delimiter = ';';
+            }
+
+            // Ignorer la première ligne (en-têtes)
+            $header = fgetcsv($handle, 1000, $delimiter);
+
+            $imported = 0;
+            $errors = [];
+
+            // Parcourir chaque ligne du fichier
+            while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
+                // Ignorer les lignes complètement vides
+                $hasData = false;
+                foreach ($row as $cell) {
+                    if (!empty(trim($cell))) {
+                        $hasData = true;
+                        break;
+                    }
+                }
+
+                if (!$hasData) {
+                    continue;
+                }
+
+                try {
+                    DB::beginTransaction();
+
+                    // Mapper les colonnes du CSV
+                    // Format: Code Fournisseur, Date Entrée, N° Facture, Observations, Statut, Code Article, Code Dépôt, Quantité, Prix Achat
+                    $codeFournisseur = trim($row[0] ?? '');
+                    $dateEntree = trim($row[1] ?? date('Y-m-d'));
+                    $numeroFacture = trim($row[2] ?? '');
+                    $observations = trim($row[3] ?? '');
+                    $statut = trim($row[4] ?? 'recu');
+                    $codeArticle = trim($row[5] ?? '');
+                    $codeDepot = trim($row[6] ?? '');
+                    $quantite = floatval(trim($row[7] ?? 0));
+                    $prixAchat = floatval(trim($row[8] ?? 0));
+
+                    // Valider le statut
+                    if (!in_array($statut, ['recu', 'en_attente', 'rejete'])) {
+                        $statut = 'recu';
+                    }
+
+                    // Trouver le fournisseur par code
+                    $fournisseur = Fournisseur::where('code', $codeFournisseur)->first();
+                    if (!$fournisseur) {
+                        throw new \Exception("Fournisseur avec le code '{$codeFournisseur}' non trouvé");
+                    }
+
+                    // Trouver l'article par code
+                    $article = Article::where('code', $codeArticle)->first();
+                    if (!$article) {
+                        throw new \Exception("Article avec le code '{$codeArticle}' non trouvé");
+                    }
+
+                    // Trouver le dépôt par code
+                    $depot = Depot::where('code', $codeDepot)->first();
+                    if (!$depot) {
+                        throw new \Exception("Dépôt avec le code '{$codeDepot}' non trouvé");
+                    }
+
+                    // Générer le numéro d'entrée unique
+                    $lastEntree = Entree::latest('id')->first();
+                    $nextNumber = $lastEntree ? intval(substr($lastEntree->numero_entree, 4)) + 1 : 1;
+                    $numeroEntree = 'ENT-' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+
+                    // Créer l'entrée principale
+                    $entree = Entree::create([
+                        'numero_entree' => $numeroEntree,
+                        'fournisseur_id' => $fournisseur->id,
+                        'date_entree' => $dateEntree,
+                        'numero_facture' => $numeroFacture,
+                        'observations' => $observations,
+                        'statut' => $statut,
+                        'montant_total' => $quantite * $prixAchat,
+                    ]);
+
+                    // Créer le détail de l'entrée
+                    EntreeDetail::create([
+                        'entree_id' => $entree->id,
+                        'article_id' => $article->id,
+                        'depot_id' => $depot->id,
+                        'stock' => $quantite,
+                        'prix_achat' => $prixAchat,
+                        'prix_total' => $quantite * $prixAchat,
+                        'observations' => $observations,
+                    ]);
+
+                    // Mettre à jour le stock si l'entrée est validée
+                    if ($statut === 'recu') {
+                        $this->updateStock($article->id, $depot->id, $quantite, $numeroEntree, $prixAchat, $entree->id);
+                    }
+
+                    DB::commit();
+                    $imported++;
+
+                } catch (\Exception $e) {
+                    DB::rollBack();
+                    $errors[] = "Ligne " . ($imported + 2) . ": " . $e->getMessage() . " | Données: " . implode(' | ', $row);
+                }
+            }
+
+            fclose($handle);
+
+            // Message de succès avec détails
+            $message = "$imported entrée(s) importée(s) avec succès.";
+
+            if (!empty($errors)) {
+                $message .= " " . count($errors) . " erreur(s) détectée(s).";
+                session()->flash('errors_detail', $errors);
+            }
+
+            return redirect()->back()->with('success', $message);
+
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Erreur lors de l\'import: ' . $e->getMessage());
+        }
+    }
+
+    // Export template des entrées to CSV file
+    public function template()
+    {
+        $headers = ['Code Fournisseur', 'Date Entrée (YYYY-MM-DD)', 'Numéro Facture', 'Observations', 'Statut (recu/en_attente/rejete)', 'Code Article', 'Code Dépôt', 'Quantité', 'Prix Achat'];
+        $filename = 'template_entrees.csv';
+
+        return response()->streamDownload(function() use ($headers) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, $headers, ';');
+            fclose($file);
+        }, $filename);
+    }
 }

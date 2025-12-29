@@ -1,0 +1,4 @@
+Code Fournisseur;Date Entrée (YYYY-MM-DD);Numéro Facture;Observations;Statut (recu/en_attente/rejete);Code Article;Code Dépôt;Quantité;Prix Achat
+FRS-00001;2025-12-27;FACT-2025-001;Première entrée de stock;recu;ART-00001;DEP-00001;100;5000
+FRS-00001;2025-12-27;FACT-2025-001;Deuxième article même facture;recu;ART-00002;DEP-00001;50;7500
+FRS-00002;2025-12-27;FACT-2025-002;Entrée en attente de validation;en_attente;ART-00003;DEP-00002;200;3000

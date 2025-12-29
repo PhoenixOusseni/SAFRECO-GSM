@@ -120,13 +120,13 @@ class StockController extends Controller
 
             DB::commit();
 
-            return redirect()->route('gestions_stocks.index')
-                ->with('success', 'Stock ajusté avec succès. ' .
-                    "Ancienne quantité: {$ancienneQuantite}, Nouvelle quantité: {$validated['quantite_disponible']}");
-
+            return redirect()
+                ->route('gestions_stocks.index')
+                ->with('success', 'Stock ajusté avec succès. ' . "Ancienne quantité: {$ancienneQuantite}, Nouvelle quantité: {$validated['quantite_disponible']}");
         } catch (\Exception $e) {
             DB::rollBack();
-            return redirect()->back()
+            return redirect()
+                ->back()
                 ->withInput()
                 ->with('error', 'Erreur lors de l\'ajustement du stock: ' . $e->getMessage());
         }
@@ -157,14 +157,10 @@ class StockController extends Controller
         ]);
 
         // Vérifier si le stock existe déjà
-        $existingStock = Stock::where('article_id', $validated['article_id'])
-            ->where('depot_id', $validated['depot_id'])
-            ->first();
+        $existingStock = Stock::where('article_id', $validated['article_id'])->where('depot_id', $validated['depot_id'])->first();
 
         if ($existingStock) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'Un stock existe déjà pour cet article dans ce dépôt. Utilisez la fonction d\'ajustement.');
+            return redirect()->back()->withInput()->with('error', 'Un stock existe déjà pour cet article dans ce dépôt. Utilisez la fonction d\'ajustement.');
         }
 
         Stock::create([
@@ -175,8 +171,7 @@ class StockController extends Controller
             'quantite_minimale' => $validated['quantite_minimale'] ?? 0,
         ]);
 
-        return redirect()->route('gestions_stocks.index')
-            ->with('success', 'Stock initialisé avec succès.');
+        return redirect()->route('gestions_stocks.index')->with('success', 'Stock initialisé avec succès.');
     }
 
     /**
@@ -187,27 +182,9 @@ class StockController extends Controller
         $stock->load(['article', 'depot']);
 
         // Récupérer l'historique des mouvements (entrées et sorties) pour ce stock
-        $entrees = DB::table('entrees_details')
-            ->join('entrees', 'entrees_details.entree_id', '=', 'entrees.id')
-            ->where('entrees_details.article_id', $stock->article_id)
-            ->where('entrees_details.depot_id', $stock->depot_id)
-            ->where('entrees.statut', 'recu')
-            ->select('entrees.date_entree as date', 'entrees.numero_entree as numero',
-                'entrees_details.quantite', 'entrees_details.prix_unitaire')
-            ->orderBy('entrees.date_entree', 'desc')
-            ->limit(10)
-            ->get();
+        $entrees = DB::table('entrees_details')->join('entrees', 'entrees_details.entree_id', '=', 'entrees.id')->where('entrees_details.article_id', $stock->article_id)->where('entrees_details.depot_id', $stock->depot_id)->where('entrees.statut', 'recu')->select('entrees.date_entree as date', 'entrees.numero_entree as numero', 'entrees_details.quantite', 'entrees_details.prix_unitaire')->orderBy('entrees.date_entree', 'desc')->limit(10)->get();
 
-        $sorties = DB::table('sorties_details')
-            ->join('sorties', 'sorties_details.sortie_id', '=', 'sorties.id')
-            ->where('sorties_details.article_id', $stock->article_id)
-            ->where('sorties_details.depot_id', $stock->depot_id)
-            ->where('sorties.statut', 'validee')
-            ->select('sorties.date_sortie as date', 'sorties.numero_sortie as numero',
-                'sorties_details.quantite', 'sorties_details.prix_unitaire')
-            ->orderBy('sorties.date_sortie', 'desc')
-            ->limit(10)
-            ->get();
+        $sorties = DB::table('sorties_details')->join('sorties', 'sorties_details.sortie_id', '=', 'sorties.id')->where('sorties_details.article_id', $stock->article_id)->where('sorties_details.depot_id', $stock->depot_id)->where('sorties.statut', 'validee')->select('sorties.date_sortie as date', 'sorties.numero_sortie as numero', 'sorties_details.quantite', 'sorties_details.prix_unitaire')->orderBy('sorties.date_sortie', 'desc')->limit(10)->get();
 
         return view('pages.stocks.show', compact('stock', 'entrees', 'sorties'));
     }
@@ -223,11 +200,12 @@ class StockController extends Controller
 
             $stock->delete();
 
-            return redirect()->route('gestions_stocks.index')
+            return redirect()
+                ->route('gestions_stocks.index')
                 ->with('success', "Stock de {$article} dans {$depot} supprimé avec succès.");
-
         } catch (\Exception $e) {
-            return redirect()->back()
+            return redirect()
+                ->back()
                 ->with('error', 'Erreur lors de la suppression du stock: ' . $e->getMessage());
         }
     }
@@ -237,19 +215,7 @@ class StockController extends Controller
      */
     public function import(Request $request)
     {
-        $request->validate([
-            'file' => 'required|file|mimes:csv,xlsx,xls|max:10240'
-        ]);
-
-        try {
-            $file = $request->file('file');
-            // Implementation to be added for CSV/Excel parsing
-            // Using Laravel Excel or similar library
-
-            return redirect()->back()->with('success', 'Stocks importés avec succès.');
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erreur lors de l\'import: ' . $e->getMessage());
-        }
+        
     }
 
     /**
@@ -261,7 +227,9 @@ class StockController extends Controller
             Stock::truncate();
             return redirect()->back()->with('success', 'Tous les stocks ont été réinitialisés.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erreur lors de la réinitialisation: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->with('error', 'Erreur lors de la réinitialisation: ' . $e->getMessage());
         }
     }
 
@@ -276,25 +244,20 @@ class StockController extends Controller
 
             $filename = 'stocks_export_' . now()->format('Y-m-d_H-i-s') . '.csv';
 
-            return response()->streamDownload(function() use ($stocks, $headers) {
+            return response()->streamDownload(function () use ($stocks, $headers) {
                 $handle = fopen('php://output', 'w');
                 fputcsv($handle, $headers);
 
                 foreach ($stocks as $stock) {
-                    fputcsv($handle, [
-                        $stock->article->code,
-                        $stock->article->designation,
-                        $stock->depot->designation,
-                        $stock->quantite_disponible,
-                        $stock->quantite_minimale,
-                        $stock->updated_at->format('d/m/Y H:i'),
-                    ]);
+                    fputcsv($handle, [$stock->article->code, $stock->article->designation, $stock->depot->designation, $stock->quantite_disponible, $stock->quantite_minimale, $stock->updated_at->format('d/m/Y H:i')]);
                 }
 
                 fclose($handle);
             }, $filename);
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erreur lors de l\'export: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->with('error', 'Erreur lors de l\'export: ' . $e->getMessage());
         }
     }
 }

@@ -186,6 +186,14 @@ class PageController extends Controller
             return redirect()->back()->with('error', 'Erreur lors de l\'exécution des migrations.');
         }
     }
+
+    /**
+     * help method
+     */
+    public function help()
+    {
+        return view('pages.help');
+    }
 }
 
 

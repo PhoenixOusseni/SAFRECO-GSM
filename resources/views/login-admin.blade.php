@@ -24,6 +24,34 @@
                                         <p class="text-center small">Entrez votre nom d'utilisateur et votre mot de
                                             passe pour vous connecter</p>
                                     </div>
+                                    @if ($errors->any())
+                                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                            <strong>Erreur!</strong>
+                                            <ul class="mb-0 mt-2">
+                                                @foreach ($errors->all() as $error)
+                                                    <li>{{ $error }}</li>
+                                                @endforeach
+                                            </ul>
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        </div>
+                                    @endif
+
+                                    @if (session('error'))
+                                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                            <i class="bi bi-exclamation-triangle-fill"></i>
+                                            <strong>Erreur!</strong> {{ session('error') }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        </div>
+                                    @endif
+
+                                    @if (session('success'))
+                                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                            <i class="bi bi-check-circle-fill"></i>
+                                            <strong>Succès!</strong> {{ session('success') }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                        </div>
+                                    @endif
                                     <form class="row g-3 needs-validation" method="POST"
                                         action="{{ route('login_admin') }}">
                                         @csrf
@@ -33,9 +61,13 @@
                                                 <span class="input-group-text" id="inputGroupPrepend">
                                                     <i class="bi bi-envelope"></i>
                                                 </span>
-                                                <input type="text" name="email" class="form-control" id="email"
-                                                    value="s-admin@gmail.com" required>
-                                                <div class="invalid-feedback">Please enter your email.</div>
+                                                <input type="text" name="email" class="form-control @error('email') is-invalid @enderror" id="email"
+                                                    value="{{ old('email', 's-admin@gmail.com') }}" required>
+                                                @error('email')
+                                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                @else
+                                                    <div class="invalid-feedback">Please enter your email.</div>
+                                                @enderror
                                             </div>
                                         </div>
                                         <div class="col-12">
@@ -44,9 +76,13 @@
                                                 <span class="input-group-text" id="inputGroupPrepend">
                                                     <i class="bi bi-lock"></i>
                                                 </span>
-                                                <input type="password" name="password" class="form-control"
+                                                <input type="password" name="password" class="form-control @error('password') is-invalid @enderror"
                                                     id="password" value="password" required>
-                                                <div class="invalid-feedback">Please enter your password.</div>
+                                                @error('password')
+                                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                                @else
+                                                    <div class="invalid-feedback">Please enter your password.</div>
+                                                @enderror
                                             </div>
                                         </div>
                                         <div class="col-12">
