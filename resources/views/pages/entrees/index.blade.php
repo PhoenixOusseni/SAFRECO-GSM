@@ -16,10 +16,10 @@
                     <i class="bi bi-plus-circle"></i>&nbsp; Nouvelle Entrée
                 </a>
                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importModal">
-                    <i class="bi bi-upload"></i>&nbsp; Importer CSV
+                    <i class="bi bi-upload"></i>&nbsp; Importer
                 </button>
                 <a href="{{ route('entrees.template') }}" class="btn btn-secondary">
-                    <i class="bi bi-download"></i>&nbsp; Télécharger Template
+                    <i class="bi bi-download"></i>&nbsp; Télécharger
                 </a>
             </div>
         </div>

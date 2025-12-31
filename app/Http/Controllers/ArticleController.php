@@ -39,6 +39,10 @@ class ArticleController extends Controller
         $article->prix_vente = $request->prix_vente;
         $article->seuil = $request->seuil; // Seuil de réapprovisionnement par défaut à 10
         $article->stock = 0; // Stock initial à 0
+
+        // Génération automatique du code-barres
+        $article->code_barre = Article::generateCodeBarre();
+        
         $article->save();
 
         // Redirection avec un message de succès

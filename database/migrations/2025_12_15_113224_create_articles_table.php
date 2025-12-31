@@ -20,6 +20,7 @@ return new class extends Migration
             $table->decimal('prix_vente', 10, 2);
             $table->integer('seuil')->default(10);
             $table->integer('stock')->default(0);
+            $table->string('code_barre')->nullable()->unique();
             $table->timestamps();
         });
     }

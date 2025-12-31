@@ -174,4 +174,8 @@ Route::middleware('auth')->group(function () {
 
     // Help
     Route::get('help', [PageController::class, 'help'])->name('help');
+
+    // Génération des codes-barres pour les articles
+    Route::get('articles/generate_code_barre', [PageController::class, 'codeBarArticle'])->name('articles.article_code_barre');
+    Route::get('articles/print_code_barre', [PageController::class, 'printCodeBarArticle'])->name('articles.print_code_barre');
 });

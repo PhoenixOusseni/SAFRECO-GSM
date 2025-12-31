@@ -29,7 +29,7 @@
                 </nav>
             </div>
             <a href="{{ route('gestions_sorties.index') }}" class="btn btn-primary">
-                <i class="bi bi-arrow-left"></i>&nbsp; Retour à la liste des Sorties
+                <i class="bi bi-arrow-left"></i>
             </a>
         </div>
     </div><!-- End Page Title -->
@@ -96,12 +96,6 @@
                                         </select>
                                     </div>
                                 </div>
-                                <div class="row">
-                                    <div class="col-12 mb-3">
-                                        <label for="observations" class="small">Observations</label>
-                                        <textarea class="form-control" id="observations" name="observations" rows="2" placeholder="Observations..."></textarea>
-                                    </div>
-                                </div>
                             </div>
                             <!-- Articles -->
                             <div class="mb-4" style="background: rgb(243, 246, 248); padding: 15px; border-radius: 5px;">
@@ -109,13 +103,17 @@
                                 <div id="articles-container">
                                     <div class="article-row mb-3 p-3"
                                         style="background: white; border: 1px solid #dee2e6; border-radius: 5px;">
-                                        <div class="row">
-                                            <div class="col-md-4 mb-3">
+                                        <div class="row align-items-end">
+                                            <div class="col-md-2 mb-3">
+                                                <label class="small">Scanner Code-barres</label>
+                                                <input type="text" class="form-control barcode-scanner" placeholder="Scanner ici..." autocomplete="off">
+                                            </div>
+                                            <div class="col-md-3 mb-3">
                                                 <label class="small">Article <span class="text-danger">*</span></label>
                                                 <select class="form-select select2-article article-select" name="articles[]" required>
                                                     <option value="">-- Sélectionner un article --</option>
                                                     @foreach ($articles as $article)
-                                                        <option value="{{ $article->id }}">{{ $article->designation }}
+                                                        <option value="{{ $article->id }}" data-prix-vente="{{ $article->prix_vente }}">{{ $article->designation }}
                                                             ({{ $article->code }})</option>
                                                     @endforeach
                                                 </select>
@@ -135,32 +133,30 @@
                                                 <input type="number" class="form-control" name="quantites[]"
                                                     placeholder="0" min="1" required>
                                             </div>
-                                            <div class="col-md-3 mb-3">
+                                            <div class="col-md-2 mb-3">
                                                 <label class="small">Prix vente <span
                                                         class="text-danger">*</span></label>
                                                 <input type="number" class="form-control prix-unitaire"
                                                     name="prix_unitaires[]" placeholder="0.00" step="0.01"
                                                     min="0" required>
                                             </div>
-                                        </div>
-                                        <div class="row">
-                                            <div class="col-12">
-                                                <button type="button" class="btn btn-sm btn-danger remove-article">
-                                                    <i class="bi bi-trash"></i> Supprimer
+                                            <div class="col-md-2 mb-3 d-flex gap-2">
+                                                <button type="button" class="btn btn-success add-article-inline">
+                                                    <i class="bi bi-plus-circle"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-danger remove-article">
+                                                    <i class="bi bi-trash"></i>
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <button type="button" id="add-article" class="btn btn-sm btn-success mb-3">
-                                    <i class="bi bi-plus-circle"></i> Ajouter un Article
-                                </button>
                             </div>
                             <div class="d-flex gap-2">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-save"></i>&nbsp; Enregistrer la Sortie
                                 </button>
-                                <a href="{{ route('gestions_sorties.index') }}" class="btn btn-secondary">
+                                <a href="{{ route('gestions_sorties.index') }}" class="btn btn-danger">
                                     <i class="bi bi-x-circle"></i>&nbsp; Annuler
                                 </a>
                             </div>
@@ -215,7 +211,9 @@
                             return {
                                 id: a.id,
                                 text: a.designation + ' (' + a.code + ')',
-                                prix: a.prix_vente
+                                prix_achat: a.prix_achat,
+                                prix_vente: a.prix_vente,
+                                code_barre: a.code_barre
                             };
                         })
                     };
@@ -245,14 +243,99 @@
         });
     }
 
-    $(document).ready(function() {
-        // Initialiser Select2
-        initSelect2Client();
-        initSelect2Article();
-        initSelect2Depot();
+    // Fonction pour rechercher un article par code-barres
+    function searchArticleByBarcode(barcode, row) {
+        $.ajax({
+            url: '{{ route("articles.search") }}',
+            type: 'GET',
+            data: { search: barcode },
+            success: function(articles) {
+                if (articles.length > 0) {
+                    const article = articles[0];
+                    const select = $(row).find('.article-select');
 
-        // Ajouter un article
-        document.getElementById('add-article').addEventListener('click', function() {
+                    // Créer une nouvelle option et la sélectionner
+                    const newOption = new Option(article.designation + ' (' + article.code + ')', article.id, true, true);
+                    $(newOption).data('prix-vente', article.prix_vente);
+                    select.append(newOption).trigger('change');
+
+                    // Remplir le prix de vente
+                    $(row).find('.prix-unitaire').val(article.prix_vente);
+
+                    // Focus sur la quantité
+                    $(row).find('input[name="quantites[]"]').focus();
+                } else {
+                    alert('Aucun article trouvé avec ce code-barres');
+                    $(row).find('.barcode-scanner').val('');
+                }
+            }
+        });
+    }
+
+    // Fonction pour attacher le scanner de code-barres
+    function attachBarcodeScanner(row) {
+        const scanner = $(row).find('.barcode-scanner');
+        let barcodeBuffer = '';
+        let lastInputTime = 0;
+
+        scanner.on('keypress', function(e) {
+            if (e.which === 13) { // Touche Entrée
+                e.preventDefault();
+                const barcode = $(this).val().trim();
+                if (barcode.length > 0) {
+                    searchArticleByBarcode(barcode, row);
+                    $(this).val('');
+                }
+                barcodeBuffer = '';
+            }
+        });
+
+        // Détection automatique du scan (rapide succession de caractères)
+        scanner.on('input', function() {
+            const currentTime = new Date().getTime();
+            if (currentTime - lastInputTime < 100) {
+                barcodeBuffer += $(this).val();
+            } else {
+                barcodeBuffer = $(this).val();
+            }
+            lastInputTime = currentTime;
+
+            clearTimeout(scanner.data('scanTimeout'));
+            scanner.data('scanTimeout', setTimeout(function() {
+                const barcode = scanner.val().trim();
+                if (barcode.length >= 8) {
+                    searchArticleByBarcode(barcode, row);
+                    scanner.val('');
+                }
+            }, 100));
+        });
+    }
+
+    // Fonction pour gérer le changement d'article
+    function attachArticleChangeHandler(row) {
+        $(row).find('.article-select').on('change', function() {
+            const selectedOption = $(this).find('option:selected');
+            const prixVente = selectedOption.data('prix-vente');
+            if (prixVente) {
+                $(row).find('.prix-unitaire').val(prixVente);
+            }
+        });
+    }
+
+    $(document).ready(function() {
+        // Initialiser Select2 pour le client
+        initSelect2Client();
+
+        // Initialiser Select2 sur la première ligne existante
+        $('.article-row').each(function() {
+            initSelect2Article($(this).find('.select2-article'));
+            initSelect2Depot($(this).find('.select2-depot'));
+            attachBarcodeScanner(this);
+            attachArticleChangeHandler(this);
+        });
+
+        // Fonction pour ajouter un article
+        function addArticleRow() {
             const container = document.getElementById('articles-container');
             const newRow = document.querySelector('.article-row').cloneNode(true);
 
@@ -267,24 +350,38 @@
             initSelect2Article(newRow.querySelector('.select2-article'));
             initSelect2Depot(newRow.querySelector('.select2-depot'));
 
-            attachRemoveListener(newRow);
-        });
+            // Attacher les événements
+            attachBarcodeScanner(newRow);
+            attachArticleChangeHandler(newRow);
+            attachEventListeners(newRow);
+        }
 
-        // Supprimer un article
-        function attachRemoveListener(row) {
+        // Fonction pour supprimer un article
+        function removeArticleRow(row) {
+            if (document.querySelectorAll('.article-row').length > 1) {
+                $(row).find('.select2-article, .select2-depot').select2('destroy');
+                row.remove();
+            } else {
+                alert('Vous devez garder au moins un article');
+            }
+        }
+
+        // Attacher les événements (Ajouter et Supprimer)
+        function attachEventListeners(row) {
+            // Bouton Ajouter
+            row.querySelector('.add-article-inline').addEventListener('click', function() {
+                addArticleRow();
+            });
+
+            // Bouton Supprimer
             row.querySelector('.remove-article').addEventListener('click', function() {
-                if (document.querySelectorAll('.article-row').length > 1) {
-                    $(row).find('.select2-article, .select2-depot').select2('destroy');
-                    row.remove();
-                } else {
-                    alert('Vous devez garder au moins un article');
-                }
+                removeArticleRow(row);
             });
         }
 
-        // Attacher listener aux lignes existantes
-        document.querySelectorAll('.article-row .remove-article').forEach(btn => {
-            attachRemoveListener(btn.closest('.article-row'));
+        // Attacher les événements aux lignes existantes
+        document.querySelectorAll('.article-row').forEach(row => {
+            attachEventListeners(row);
         });
     });
 </script>

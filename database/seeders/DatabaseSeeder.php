@@ -16,10 +16,11 @@ class DatabaseSeeder extends Seeder
         $this->call([
             UserSeeder::class,
             EnteteSeeder::class,
-            // ArticleSeeder::class,
-            // DepotSeeder::class,
-            // FournisseurSeeder::class,
-            // ClientSeeder::class,
+            GenerateCodeBarreSeeder::class,
+            ArticleSeeder::class,
+            DepotSeeder::class,
+            FournisseurSeeder::class,
+            ClientSeeder::class,
         ]);
     }
 }

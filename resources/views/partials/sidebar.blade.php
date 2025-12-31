@@ -76,6 +76,20 @@
             </ul>
         </li><!-- End Tables Nav -->
 
+        <li class="nav-item">
+            <a class="nav-link collapsed" data-bs-target="#code-nav" data-bs-toggle="collapse" href="#">
+                <i class="bi bi-barcode"></i><span>CODE BARRE</span><i
+                    class="bi bi-chevron-down ms-auto"></i>
+            </a>
+            <ul id="code-nav" class="nav-content collapse " data-bs-parent="#sidebar-nav">
+                <li>
+                    <a href="{{ route('articles.article_code_barre') }}">
+                        <i class="bi bi-pencil-square"></i><span>Editions</span>
+                    </a>
+                </li>
+            </ul>
+        </li><!-- End Tables Nav -->
+
         <li class="nav-heading">CONFIGURATION</li>
         <li class="nav-item">
             <a class="nav-link collapsed" href="{{ route('entetes.index') }}">
@@ -107,6 +121,12 @@
                 <span>Depots</span>
             </a>
         </li><!-- End Error 404 Page Nav -->
+        {{-- <li class="nav-item">
+            <a class="nav-link collapsed" href="{{ route('amortissements.taux_amortissement') }}">
+                <i class="bi bi-percent"></i>
+                <span>Tableau d'amortissements</span>
+            </a>
+        </li><!-- End Depreciation Rate Nav --> --}}
         <li class="nav-item">
             <a class="nav-link collapsed" href="{{ route('gestions_banques.index') }}">
                 <i class="bi bi-bank"></i>

@@ -194,6 +194,18 @@ class PageController extends Controller
     {
         return view('pages.help');
     }
+
+    // Article with code-barre generation logic moved to Article model
+    public function codeBarArticle()
+    {
+        $articles = Article::all();
+        return view('pages.articles.view_codeBar_article', compact('articles'));
+    }
+
+    // Print code-barres for a specific article
+    public function printCodeBarArticle()
+    {
+        $articles = Article::all();
+        return view('pages.articles.print_codeBar_article', compact('articles'));
+    }
 }
-
-
